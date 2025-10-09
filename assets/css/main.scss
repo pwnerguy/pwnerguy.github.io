@@ -6,3 +6,14 @@
 
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
+
+
+::selection {
+  background-color: #c8e1ff;
+  color: #000;
+}
+
+::-moz-selection {
+  background-color: #c8e1ff;
+  color: #000;
+}

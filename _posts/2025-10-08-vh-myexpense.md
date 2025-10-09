@@ -12,6 +12,7 @@ categories:
 tags:
   - xss
   - sqli
+  - xsrf
 ---
 # Introduction
 -------------
