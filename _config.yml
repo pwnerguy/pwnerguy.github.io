@@ -19,7 +19,7 @@ locale                   : "en-US"
 title                    : "pwnerguy's Blog"
 title_separator          : "-"
 name                     : "pwnerguy"
-description              : "Posts about Cybersecurity, Ethical Hacking, CTFs and more."
+description              : "Sharing my journey through<br>cybersecurity, ethical hacking,<br>and CTFs."
 url                      : "https://pwnerguy.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "pwnerguy/pwnerguy.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -103,7 +103,7 @@ analytics:
 author:
   name             : "pwnerguy"
   avatar           : "/assets/images/pwnerguy.png"
-  bio              : "Blog about Cybersecurity,<br>Ethical Hacking, CTFs<br>and more."
+  bio              : "Sharing my journey through<br>cybersecurity, ethical hacking,<br>and CTFs."
   location         : "Spain"
   email            : "rmp.it@proton.me"
   uri              :
