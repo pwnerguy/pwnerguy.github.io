@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-10-08-vh-myexpense.md",
+                "file": "_posts/2025-10-10-vh-infovore.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-10-08-vh-myexpense"
+              "title": "2025-10-10-vh-infovore"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 251.5
   },
   "right": {
     "id": "5cb1b8d366752acc",
@@ -171,23 +171,32 @@
   },
   "active": "3aeebeaf6076bc06",
   "lastOpenFiles": [
+    "_posts/2025-10-08-vh-myexpense.md",
+    "_posts/2025-10-10-vh-infovore.md",
+    "_posts/2025-10-10-vh-infovore.md~",
+    "assets/images/vh-infovore/flag3.png",
+    "assets/images/vh-infovore/privesc.png",
+    "assets/images/vh-infovore/flag2.png",
+    "assets/images/vh-infovore/public_key_admin.png",
+    "assets/images/vh-infovore/flag1.png",
+    "assets/images/vh-infovore/proc_net_arp.png",
+    "assets/images/vh-infovore/proc_net_tcp.png",
+    "assets/images/vh-infovore/ssh2john.png",
+    "assets/images/vh-infovore/phpinfolfi.py.png",
+    "assets/images/vh-infovore/wfuzz.png",
+    "assets/images/vh-infovore",
     "_posts/2025-10-08-vh-myexpense.md~",
     "_sass/minimal-mistakes/_syntax.scss~",
     "_config.yml~",
     "_posts/T2018-11-18-tcp-bind-shellcode.md",
     "_posts/2018-11-18-tcp-bind-shellcode.md~",
-    "_site/assets/images/vh.png",
-    "assets/images/vh.png",
     "_posts/2018-11-18-tcp-bind-shellcode.md",
-    "_posts/2025-10-08-vh-myexpense.md",
     "_site/vh-myexpense/index.html",
     "_site/vh-myexpense",
     "_site/assets/images/vh-myexpense/nmap_scan.md",
     "_site/assets/images/vh-myexpense/extractPorts.md",
     "_site/assets/images/vh-myexpense/nmap_scan/index.html",
     "_site/assets/images/vh-myexpense/nmap_scan",
-    "_site/assets/images/vh-myexpense/extractPorts/index.html",
-    "_site/assets/images/vh-myexpense/extractPorts",
     "assets/images/vh-myexpense/extractPorts.md",
     "assets/images/vh-myexpense/nmap_scan.md"
   ]
