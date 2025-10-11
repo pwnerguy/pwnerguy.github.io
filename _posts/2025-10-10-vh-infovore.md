@@ -2,7 +2,7 @@
 layout: single
 title: "VulnHub - infovore: 1"
 excerpt: This is an easy to intermediate box that shows you how you can exploit innocent looking php functions and lazy sys admins. There are 4 flags in total to be found, and you will have to think outside the box and try alternative ways to achieve your goal of capturing all flags. VM has been tested on VirtualBox 6.1.10 and VMWare (Fusion)
-date: 2025-10-08
+date: 2025-10-10
 classes: wide
 header:
   teaser: /assets/images/vh.png
@@ -13,6 +13,7 @@ tags:
   - file-upload
   - lfi
   - race-condition
+  - brute-force
   - docker-abuse
 ---
 

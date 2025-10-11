@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-10-10-vh-infovore.md",
+                "file": "_posts/2025-10-11-vh-ica1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-10-10-vh-infovore"
+              "title": "2025-10-11-vh-ica1"
             }
           }
         ]
@@ -171,32 +171,33 @@
   },
   "active": "3aeebeaf6076bc06",
   "lastOpenFiles": [
-    "_posts/2025-10-08-vh-myexpense.md",
     "_posts/2025-10-10-vh-infovore.md",
+    "_posts/2025-10-11-vh-ica1.md",
+    "_posts/2025-10-08-vh-myexpense.md",
+    "_site/vh-ica1/index.html",
+    "_site/vh-ica1",
+    "_site/assets/images/vh-ica1/whatweb.png",
+    "_site/assets/images/vh-ica1/web.png",
+    "_site/assets/images/vh-ica1/wappalyzer.png",
+    "_site/assets/images/vh-ica1/password.png",
+    "_site/assets/images/vh-ica1/searchsploit.png",
+    "_site/assets/images/vh-ica1/nmap2.png",
+    "_site/assets/images/vh-ica1/nmap1.png",
+    "_site/assets/images/vh-ica1/mysql.png",
+    "_site/assets/images/vh-ica1/hydra.png",
+    "_site/assets/images/vh-ica1/flag.png",
+    "_site/assets/images/vh-ica1",
+    "_posts/2025-10-11-vh-ica1.md~",
     "_posts/2025-10-10-vh-infovore.md~",
-    "assets/images/vh-infovore/flag3.png",
-    "assets/images/vh-infovore/privesc.png",
-    "assets/images/vh-infovore/flag2.png",
-    "assets/images/vh-infovore/public_key_admin.png",
-    "assets/images/vh-infovore/flag1.png",
-    "assets/images/vh-infovore/proc_net_arp.png",
-    "assets/images/vh-infovore/proc_net_tcp.png",
-    "assets/images/vh-infovore/ssh2john.png",
-    "assets/images/vh-infovore/phpinfolfi.py.png",
-    "assets/images/vh-infovore/wfuzz.png",
+    "assets/images/vh-ica1",
     "assets/images/vh-infovore",
     "_posts/2025-10-08-vh-myexpense.md~",
     "_sass/minimal-mistakes/_syntax.scss~",
     "_config.yml~",
     "_posts/T2018-11-18-tcp-bind-shellcode.md",
-    "_posts/2018-11-18-tcp-bind-shellcode.md~",
     "_posts/2018-11-18-tcp-bind-shellcode.md",
-    "_site/vh-myexpense/index.html",
-    "_site/vh-myexpense",
     "_site/assets/images/vh-myexpense/nmap_scan.md",
     "_site/assets/images/vh-myexpense/extractPorts.md",
-    "_site/assets/images/vh-myexpense/nmap_scan/index.html",
-    "_site/assets/images/vh-myexpense/nmap_scan",
     "assets/images/vh-myexpense/extractPorts.md",
     "assets/images/vh-myexpense/nmap_scan.md"
   ]
