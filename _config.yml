@@ -19,7 +19,7 @@ locale                   : "en-US"
 title                    : "pwnerguy's Blog"
 title_separator          : "-"
 name                     : "pwnerguy"
-description              : "Sharing my journey through<br>cybersecurity, ethical hacking,<br>and CTFs."
+description              : "Hacking my way through<br>cybersecurity, pentesting,<br>and CTFs."
 url                      : "https://pwnerguy.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "pwnerguy/pwnerguy.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -103,8 +103,8 @@ analytics:
 author:
   name             : "pwnerguy"
   avatar           : "/assets/images/pwnerguy.png"
-  bio              : "Sharing my journey through<br>cybersecurity, ethical hacking,<br>and CTFs."
-  location         : "Spain"
+  bio              : "Hacking my way through<br>cybersecurity, pentesting,<br>and CTFs."
+  location         : 
   email            : "rmp.it@proton.me"
   uri              :
   home             : # null (default), "absolute or relative url to link to author home"

@@ -20,7 +20,6 @@ tags:
 # Introduction
 -------------
 This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. In this machine we'll exploit some php functions and lazy sys admins as the description says.
-
 <br>
 
 # Recon
