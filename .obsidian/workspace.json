@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-10-29-thm-basic-pentesting.md",
+                "file": "_posts/2025-10-08-vh-myexpense.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-10-29-thm-basic-pentesting"
+              "title": "2025-10-08-vh-myexpense"
             }
           },
           {
@@ -186,7 +186,14 @@
   "active": "3aeebeaf6076bc06",
   "lastOpenFiles": [
     "_posts/2025-10-11-vh-ica1.md",
+    "_posts/2025-10-10-vh-infovore.md",
     "_posts/2025-10-29-thm-basic-pentesting.md",
+    "_posts/2025-10-08-vh-myexpense.md",
+    "assets/images/thm.png",
+    "assets/images/vh.png",
+    "assets/images/pwnerguy.png",
+    "assets/images/logo.png",
+    "assets/images/htb.webp",
     "_site/thm-basic-pentesting/index.html",
     "_site/thm-basic-pentesting",
     "_site/assets/images/thm-basic-pentesting/web2.png",
@@ -194,16 +201,9 @@
     "_site/assets/images/thm-basic-pentesting/root_flag.png",
     "_site/assets/images/thm-basic-pentesting/root.png",
     "_site/assets/images/thm-basic-pentesting/extractports.png",
-    "_site/assets/images/thm-basic-pentesting/development.png",
     "_site/assets/images/thm-basic-pentesting",
     "_posts/2025-10-29-thm-basic-pentesting.md~",
-    "assets/images/thm-basic-pentesting/root_flag.png",
-    "assets/images/thm-basic-pentesting/root.png",
-    "_posts/2025-10-10-vh-infovore.md",
-    "assets/images/thm-basic-pentesting/web2.png",
-    "assets/images/thm-basic-pentesting/development.png",
     "assets/images/thm-basic-pentesting",
-    "_posts/2025-10-08-vh-myexpense.md",
     "_site/vh-x/index.html",
     "_site/vh-x",
     "_site/vh-ica1/index.html",
