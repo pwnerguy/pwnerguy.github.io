@@ -13,6 +13,7 @@ tags:
   - xss
   - sqli
   - xsrf
+  - brute-force
 ---
 # Introduction
 -------------
