@@ -17,6 +17,7 @@ tags:
   - brute-force
   - rid-brute-force
   - kerberoasting
+  - pth
 ---
 
 # Introduction
