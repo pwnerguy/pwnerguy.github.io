@@ -5,3 +5,11 @@
     </a>
   </li>
 -->
+
+{% if author.tryhackme %}
+  <li>
+    <a href="{{ author.tryhackme }}" title="TryHackMe" target="_blank" rel="noopener">
+      <i class="fas fa-user-secret"></i> TryHackMe
+    </a>
+  </li>
+{% endif %}

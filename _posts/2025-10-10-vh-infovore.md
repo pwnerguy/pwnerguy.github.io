@@ -9,6 +9,8 @@ header:
   teaser_home_page: true
 categories:
   - vulnhub
+  - medium
+  - linux
 tags:
   - file-upload
   - lfi

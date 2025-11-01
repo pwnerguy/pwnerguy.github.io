@@ -9,6 +9,8 @@ header:
   teaser_home_page: true
 categories:
   - tryhackme
+  - easy
+  - linux
 tags:
   - spip-4.2.0
   - csrf-token-discovery

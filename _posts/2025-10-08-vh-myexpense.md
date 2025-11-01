@@ -9,6 +9,8 @@ header:
   teaser_home_page: true
 categories:
   - vulnhub
+  - easy
+  - linux 
 tags:
   - xss
   - sqli
