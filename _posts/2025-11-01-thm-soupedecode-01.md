@@ -5,7 +5,7 @@ excerpt: Soupedecode is an intense and engaging challenge in which players must 
 date: 2025-11-01
 classes: wide
 header:
-  teaser: /assets/images/thm-soupdecode-01/logo.png
+  teaser: /assets/images/thm-soupedecode-01/logo.png
   teaser_home_page: true
 categories:
   - tryhackme
@@ -13,7 +13,7 @@ categories:
   - windows
   - active-directory
 tags:
-  - smb-enumeration
+  - smb-enum
   - brute-force
   - rid-brute-force
   - kerberoasting
@@ -22,7 +22,7 @@ tags:
 
 # Introduction
 -------------
-This writeup documents the penetration testing of the [**Soupdecode**](https://tryhackme.com/room/soupedecode01) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
+This writeup documents the penetration testing of the [**Soupedecode**](https://tryhackme.com/room/soupedecode01) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion, I'll get access in a Windows Server 2022 Domain Controller by enumerating the SMB service, perform a RID bruteforce attack and Kerberoasting to privesc.
 
