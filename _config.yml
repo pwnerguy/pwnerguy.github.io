@@ -16,7 +16,7 @@ minimal_mistakes_skin    : "haxor" # "air", "aqua", "contrast", "dark", "dirt", 
 
 # Site Settings
 locale                   : "en-US"
-title                    : "pwnerguy's Blog"
+title                    : "Shell & Coffee"
 title_separator          : "-"
 name                     : "pwnerguy"
 description              : "Hacking my way through<br>cybersecurity, pentesting,<br>and CTFs."
