@@ -11,7 +11,7 @@ categories:
   - tryhackme
   - easy
   - windows
-  - active-directory
+  - ad
 tags:
   - smb-enum
   - brute-force
@@ -326,7 +326,7 @@ We have the credentials of the ``file_svc`` user. Let's start enumerating shared
 ```java
 ❯ nxc smb dc01.soupedecode.local -u 'file_svc' -p '***REDACTED_PASSWORD***' --shares
 SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
-SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\file_svc:Password123!! 
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\file_svc:***REDACTED_PASSWORD***
 SMB         10.10.34.153    445    DC01             [*] Enumerated shares
 SMB         10.10.34.153    445    DC01             Share           Permissions     Remark
 SMB         10.10.34.153    445    DC01             -----           -----------     ------
