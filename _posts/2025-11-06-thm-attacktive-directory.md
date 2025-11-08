@@ -327,7 +327,6 @@ We have base64 encoded backup credentials. Let's decode the credentials of the b
 ***REDACTED***
 ```
 
-borrador ``backup@spookysec.local:backup2517860``
 <br>
 # Post-Exploitation
 ---------
