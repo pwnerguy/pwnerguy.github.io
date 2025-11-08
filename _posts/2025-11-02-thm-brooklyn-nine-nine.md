@@ -152,6 +152,7 @@ Jake's password seems to be very weak.
 -----------
 ## Identification and exploitation of vulnerabilities
 ----------
+
 We can now try the user jake and brute-force his password to do the SSH intrussion. I'll try to crack jake's password with **Hydra**.
 
 ```bash
