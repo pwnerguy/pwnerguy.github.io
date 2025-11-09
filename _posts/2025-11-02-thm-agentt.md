@@ -14,6 +14,7 @@ categories:
 tags:
   - user-agent-rce
   - rshell-escape
+  - cmd-injection
 ---
 
 

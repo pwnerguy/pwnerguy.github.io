@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-11-08-thm-corridor.md",
+                "file": "_posts/2025-11-09-thm-pickle-rick.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-11-08-thm-corridor"
+              "title": "2025-11-09-thm-pickle-rick"
+            }
+          },
+          {
+            "id": "175fba9bc9b85d5c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2025-11-09-thm-pickle-rick.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "2025-11-09-thm-pickle-rick"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -169,41 +184,43 @@
       "bases:Create new base": false
     }
   },
-  "active": "40e75224a7082c60",
+  "active": "175fba9bc9b85d5c",
   "lastOpenFiles": [
-    "_posts/2025-11-08-thm-corridor.md~",
-    "_posts/2025-11-08-thm-vulnnet-active.md",
+    "_posts/2025-11-09-thm-pickle-rick.md~",
     "_posts/2025-11-08-thm-corridor.md",
+    "_posts/2025-11-08-thm-vulnnet-active.md",
+    "_posts/2025-11-09-thm-pickle-rick.md",
+    "_posts/2025-10-08-vh-myexpense.md",
+    "_posts/2025-11-02-thm-easy-peasy.md",
+    "_posts/2025-11-02-thm-brooklyn-nine-nine.md",
+    "_posts/2025-11-02-thm-agentt.md",
+    "_posts/2025-11-01-thm-soupedecode-01.md",
+    "_posts/2025-11-01-thm-light.md",
+    "_posts/2025-10-31-thm-publisher.md",
+    "_posts/2025-10-29-thm-basic-pentesting.md",
+    "_posts/2025-10-11-vh-ica1.md",
+    "_posts/2025-10-10-vh-infovore.md",
+    "_posts/2025-11-06-thm-attacktive-directory.md",
+    "assets/images/thm-pickle-rick/portal.png",
+    "assets/images/thm-pickle-rick/clue.png",
+    "assets/images/thm-pickle-rick/robots.png",
+    "assets/images/thm-corridor/robots.png",
+    "assets/images/thm-pickle-rick/web.png",
+    "assets/images/asd",
+    "assets/images/New Folder",
+    "assets/images/thm-pickle-rick/logo.jpeg",
+    "assets/images/thm-pickle-rick",
+    "_posts/2025-11-08-thm-corridor.md~",
     "_site/thm-corridor/index.html",
     "_site/thm-corridor",
     "_site/assets/images/thm-corridor/web.png",
     "_site/assets/images/thm-corridor/logo.png",
     "_site/assets/images/thm-corridor/flag.png",
     "_site/assets/images/thm-corridor/door1.png",
-    "_site/assets/images/thm-corridor/css.png",
-    "_site/assets/images/thm-corridor/cords.png",
     "_site/assets/images/thm-corridor",
-    "assets/images/thm-corridor/logo.png",
-    "assets/images/thm-corridor/flag.png",
-    "assets/images/thm-corridor/css.png",
-    "assets/images/thm-corridor/door1.png",
     "assets/images/thm-corridor",
-    "assets/images/New Folder",
-    "_posts/2025-11-02-thm-agentt.md",
-    "_posts/2025-11-02-thm-brooklyn-nine-nine.md",
-    "_posts/2025-11-06-thm-attacktive-directory.md",
     "assets/images/thm-vulnnet-active/_site",
-    "_posts/2025-11-02-thm-easy-peasy.md",
     "_site/thm-vulnnet-active/index.html",
-    "_site/thm-vulnnet-active",
-    "_site/assets/images/thm-vulnnet-active",
-    "_posts/2025-11-01-thm-soupedecode-01.md",
-    "_posts/2025-10-29-thm-basic-pentesting.md",
-    "_posts/2025-10-31-thm-publisher.md",
-    "_posts/2025-11-01-thm-light.md",
-    "_posts/2025-10-08-vh-myexpense.md",
-    "_posts/2025-10-10-vh-infovore.md",
-    "_posts/2025-10-11-vh-ica1.md",
     "().md",
     "_posts/T2018-11-18-tcp-bind-shellcode.md",
     "_posts/2018-11-18-tcp-bind-shellcode.md",

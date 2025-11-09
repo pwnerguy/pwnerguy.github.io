@@ -17,13 +17,14 @@ tags:
   - race-condition
   - brute-force
   - docker-escape
+  - cmd-injection
 ---
 
 # Introduction
 -------------
 This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. In this machine we'll exploit some php functions and lazy sys admins as the description says.
-<br>
 
+<br>
 # Recon
 ------------------
 ## Enumeration of exposed services
@@ -80,7 +81,6 @@ We find out some directories and PHP files. We see the classic **info.php** wich
 ![](/assets/images/vh-infovore/phpinfo.png)
 
 <br>
-
 # Exploitation
 -----------
 ## Identification and exploitation of vulnerabilities
