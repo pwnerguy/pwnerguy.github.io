@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Mr Robot CTF
-excerpt: Can you root this Mr. Robot styled machine? This is a virtual machine meant for beginners/intermediate users. There are 3 hidden keys located on the machine, can you find them?
+excerpt: Based on the iconic Mr. Robot show, this virtual machine invites you to step into the world of hacking and test your skills. Your objective is to explore the system, uncover vulnerabilities, and ultimately root the box.Hidden within the machine are three keys, each representing a milestone in your progress. To complete this capture the flag challenge, you’ll need to track down all three keys and prove your mastery. Can you channel your inner Elliot Alderson and find all three keys to finish the challenge?
 date: 2025-12-17
 classes: wide
 header:

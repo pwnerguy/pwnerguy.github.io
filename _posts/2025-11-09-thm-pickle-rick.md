@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Pickle Rick
-excerpt: This Rick and Morty-themed challenge requires you to exploit a web server and find three ingredients to help Rick make his potion and transform himself back into a human from a pickle.
+excerpt: Help turn Rick back into a human! In this Rick and Morty–themed capture the flag challenge, your task is to exploit a vulnerable web server and uncover three hidden ingredients. Each ingredient represents a crucial step in Rick’s recipe for the potion that will transform him back from his unfortunate pickle state into his human form. The challenge is designed to test your skills in reconnaissance, exploitation, and creative problem-solving, while keeping the theme lighthearted and fun. Can you track down all three ingredients and complete Rick’s potion before time runs out?
 date: 2025-11-09
 classes: wide
 header:
@@ -19,7 +19,7 @@ tags:
 -------------
 This writeup documents the penetration testing of the [**Pickle Rick**](https://tryhackme.com/room/picklerick) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
-In this case I'll try to log in a panel vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
+In this case I'll try to log into a panel which is vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
 
 <br>
 # Recon

@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Blueprint
-excerpt: Hack into this Windows machine and escalate your privileges to Administrator. Do you have what is takes to hack into this Windows Machine?
+excerpt: Hack into this Windows machine and escalate your privileges to Administrator. Do you have what it takes to break in and fully compromise the system? Your objective is to explore the environment, uncover hidden weaknesses, and leverage them to gain elevated access. Along the way, you’ll need to locate and decrypt the NTLM hash belonging to the “Lab” user, which serves as a critical step in proving your foothold. Finally, track down the root.txt file to complete the capture the flag challenge and demonstrate full control of the machine.
 date: 2025-11-10
 classes: wide
 header:

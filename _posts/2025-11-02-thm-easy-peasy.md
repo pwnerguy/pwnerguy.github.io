@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Easy Peasy
-excerpt: Practice using tools such as Nmap and GoBuster to locate a hidden directory to get initial access to a vulnerable machine. Then escalate your privileges through a vulnerable cronjob.
+excerpt: Practice using penetration testing tools such as Nmap and GoBuster to perform reconnaissance and enumeration on a target system. Begin by scanning the machine with Nmap to identify open ports, running services, and potential entry points. Once you have mapped out the network surface, use GoBuster to brute-force directories and uncover hidden paths that may provide access to sensitive resources.
 date: 2025-11-02
 classes: wide
 header:

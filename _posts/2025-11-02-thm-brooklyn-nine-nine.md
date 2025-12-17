@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Brooklyn Nine Nine
-excerpt: This room is aimed for beginner level hackers but anyone can try to hack this box. There are two main intended ways to root the box.<br><br>
+excerpt: This room is designed primarily for beginner-level hackers who want to practice and strengthen their skills, but it remains open and accessible for anyone interested in tackling the challenge. The box provides a fun and engaging scenario inspired by the Brooklyn Nine Nine theme, where players can explore vulnerabilities and test different approaches. There are two main intended paths to achieve root access, giving learners the opportunity to experiment with multiple techniques and understand how different exploitation methods can lead to the same goal.
 date: 2025-11-02
 classes: wide
 header:
