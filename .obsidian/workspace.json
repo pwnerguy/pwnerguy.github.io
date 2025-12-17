@@ -8,31 +8,31 @@
         "type": "tabs",
         "children": [
           {
-            "id": "40e75224a7082c60",
+            "id": "adcfa4661252693d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-11-09-thm-pickle-rick.md",
+                "file": "_posts/2025-12-17-thm-mrrobot.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-11-09-thm-pickle-rick"
+              "title": "2025-12-17-thm-mrrobot"
             }
           },
           {
-            "id": "175fba9bc9b85d5c",
+            "id": "e401a9c289cd9d60",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-11-10-thm-blueprint.md",
+                "file": "_posts/2025-12-17-thm-mrrobot.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-11-10-thm-blueprint"
+              "title": "2025-12-17-thm-mrrobot"
             }
           }
         ],
@@ -93,7 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 253.5
+    "width": 244.5
   },
   "right": {
     "id": "5cb1b8d366752acc",
@@ -184,44 +184,45 @@
       "bases:Create new base": false
     }
   },
-  "active": "175fba9bc9b85d5c",
+  "active": "e401a9c289cd9d60",
   "lastOpenFiles": [
-    "_site/thm-blueprint/index.html",
-    "_site/thm-blueprint",
-    "_site/assets/images/thm-blueprint/whoami.png",
-    "_site/assets/images/thm-blueprint/web3.png",
-    "_site/assets/images/thm-blueprint/web2.png",
-    "_site/assets/images/thm-blueprint/web1.png",
-    "_site/assets/images/thm-blueprint/rev.png",
-    "_site/assets/images/thm-blueprint/logo.png",
-    "_site/assets/images/thm-blueprint/includes.png",
-    "_site/assets/images/thm-blueprint/hash.png",
-    "_site/assets/images/thm-blueprint",
-    "_posts/2025-11-10-thm-blueprint.md~",
-    "_posts/2025-11-08-thm-vulnnet-active.md",
+    "_site/thm-mrrobot/index.html",
+    "_site/thm-mrrobot",
+    "_site/assets/images/thm-mrrobot/wp.png",
+    "_site/assets/images/thm-mrrobot/web.png",
+    "_site/assets/images/thm-mrrobot/logo.png",
+    "_site/assets/images/thm-mrrobot/flag2.png",
+    "_site/assets/images/thm-mrrobot/flag1.png",
+    "_site/assets/images/thm-mrrobot",
+    "_posts/_site/2025-12-17-thm-mrrobot.html",
+    "_posts/_site/2025-11-10-thm-blueprint.html",
+    "_posts/_site/2025-11-09-thm-pickle-rick.html",
+    "_posts/_site/2025-11-08-thm-vulnnet-active.html",
+    "_posts/_site/2025-11-08-thm-corridor.html",
+    "_posts/_site/2025-11-06-thm-attacktive-directory.html",
+    "_posts/_site/2025-11-02-thm-easy-peasy.html",
+    "_posts/_site/2025-11-02-thm-brooklyn-nine-nine.html",
     "_posts/2025-11-09-thm-pickle-rick.md",
     "_posts/2025-11-10-thm-blueprint.md",
-    "assets/images/thm-blueprint/hash.png",
-    "assets/images/thm-blueprint/rev.png",
-    "assets/images/thm-blueprint",
-    "_posts/2025-11-09-thm-pickle-rick.md~",
-    "_posts/2025-11-08-thm-corridor.md",
-    "_posts/2025-10-08-vh-myexpense.md",
-    "_posts/2025-11-02-thm-easy-peasy.md",
-    "_posts/2025-11-02-thm-brooklyn-nine-nine.md",
-    "_posts/2025-11-02-thm-agentt.md",
-    "_posts/2025-11-01-thm-soupedecode-01.md",
+    "_posts/2025-10-11-vh-ica1.md",
     "_posts/2025-11-01-thm-light.md",
+    "_posts/2025-11-02-thm-agentt.md",
+    "_posts/2025-11-02-thm-easy-peasy.md",
+    "_posts/2025-11-06-thm-attacktive-directory.md",
+    "_posts/2025-11-08-thm-corridor.md",
+    "_posts/2025-11-08-thm-vulnnet-active.md",
+    "_posts/2025-12-17-thm-mrrobot.md",
+    "assets/images/thm-mrrobot/flag2.png",
+    "assets/images/thm-mrrobot/wp.png",
+    "assets/images/thm-mrrobot/flag1.png",
+    "assets/images/thm-mrrobot/web.png",
+    "assets/images/thm-mrrobot/logo.png",
+    "_posts/2025-10-08-vh-myexpense.md",
+    "_posts/2025-11-02-thm-brooklyn-nine-nine.md",
+    "_posts/2025-11-01-thm-soupedecode-01.md",
     "_posts/2025-10-31-thm-publisher.md",
     "_posts/2025-10-29-thm-basic-pentesting.md",
-    "_posts/2025-10-11-vh-ica1.md",
     "_posts/2025-10-10-vh-infovore.md",
-    "_posts/2025-11-06-thm-attacktive-directory.md",
-    "assets/images/asd",
-    "assets/images/New Folder",
-    "assets/images/thm-pickle-rick",
-    "_posts/2025-11-08-thm-corridor.md~",
-    "_site/thm-corridor/index.html",
     "().md",
     "_posts/T2018-11-18-tcp-bind-shellcode.md",
     "_posts/2018-11-18-tcp-bind-shellcode.md",
