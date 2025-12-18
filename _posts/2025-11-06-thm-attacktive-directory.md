@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Attacktive Directory
-excerpt: Active Directory is the backbone of most corporate networks, powering the majority of modern IT infrastructures. With over 99% of organizations relying on it, Domain Controllers serve as a critical component in managing authentication, permissions, and overall security. In this challenge, your task is to investigate a vulnerable Domain Controller, identify potential weaknesses, and exploit them to gain unauthorized access. From there, you’ll need to escalate privileges and demonstrate full control of the environment.
+excerpt: Active Directory is the backbone of most corporate networks, powering the majority of modern IT infrastructures. With over 99% of organizations relying on it, Domain Controllers serve as a critical component in managing authentication, permissions, and overall security. In this challenge, your task is to investigate a vulnerable Domain Controller, identify potential weaknesses, and exploit them to gain unauthorized access.
 date: 2025-11-06
 classes: wide
 header:

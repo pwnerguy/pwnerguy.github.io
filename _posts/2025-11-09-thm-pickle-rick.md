@@ -1,7 +1,7 @@
 ---
 layout: single
 title: TryHackMe - Pickle Rick
-excerpt: Help turn Rick back into a human! In this Rick and Morty–themed capture the flag challenge, your task is to exploit a vulnerable web server and uncover three hidden ingredients. Each ingredient represents a crucial step in Rick’s recipe for the potion that will transform him back from his unfortunate pickle state into his human form. The challenge is designed to test your skills in reconnaissance, exploitation, and creative problem-solving, while keeping the theme lighthearted and fun. Can you track down all three ingredients and complete Rick’s potion before time runs out?
+excerpt: Help turn Rick back into a human! In this Rick and Morty–themed capture the flag challenge, your task is to exploit a vulnerable web server and uncover three hidden ingredients. Each ingredient represents a crucial step in Rick’s recipe for the potion that will transform him back from his unfortunate pickle state into his human form. The challenge is designed to test your skills in reconnaissance, exploitation, and creative problem-solving, while keeping the theme lighthearted and fun.
 date: 2025-11-09
 classes: wide
 header:
