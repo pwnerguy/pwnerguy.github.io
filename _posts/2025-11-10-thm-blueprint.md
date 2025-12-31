@@ -8,13 +8,12 @@ header:
   teaser: /assets/images/thm-blueprint/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - easy
-  - windows
+  - TryHackMe
+  - Easy
+  - Windows
 tags:
-  - osecommerce-2.3.4
-  - lfi
-  - cmd-injection
+  - oscommerce-2.3.4-rce
+  - file-upload-abuse
 ---
 
 # Introduction
@@ -31,10 +30,10 @@ In this ocasion, I'll exploit a vulnerable e-commerce platform called osEcommerc
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
-* TTL 128: Windows machine
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.91.114

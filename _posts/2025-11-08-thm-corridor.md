@@ -8,9 +8,9 @@ header:
   teaser: /assets/images/thm-corridor/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - easy
-  - linux
+  - TryHackMe
+  - Easy
+  - Linux
 tags:
   - idor
 ---
@@ -30,10 +30,10 @@ In this case I'll exploit an IDOR vulnerability with a simple Bash script that h
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
 * TTL 128: Windows machine.
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.74.221

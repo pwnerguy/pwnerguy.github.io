@@ -8,11 +8,12 @@ header:
   teaser: /assets/images/thm-pickle-rick/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - easy
-  - linux
+  - TryHackMe
+  - Easy
+  - Linux
 tags:
-  - cmd-injection
+  - password-bruteforcing
+  - rce
 ---
 
 # Introduction
@@ -29,10 +30,10 @@ In this case I'll try to log into a panel which is vulnerable to command injecti
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
+When we ping a machine that is in our local network, normally:
 * TTL 64: Linux machine.
 * TTL 128: Windows machine.
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.195.201

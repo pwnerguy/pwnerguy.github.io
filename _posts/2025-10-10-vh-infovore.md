@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "VulnHub - infovore: 1"
+title: "VulnHub - Infovore: 1"
 excerpt: This is an easy to intermediate box that shows you how you can exploit innocent looking php functions and lazy sys admins. There are 4 flags in total to be found, and you will have to think outside the box and try alternative ways to achieve your goal of capturing all flags. VM has been tested on VirtualBox 6.1.10 and VMWare (Fusion)
 date: 2025-10-10
 classes: wide
@@ -8,16 +8,16 @@ header:
   teaser: /assets/images/vh.png
   teaser_home_page: true
 categories:
-  - vulnhub
-  - medium
-  - linux
+  - VulnHub
+  - Medium
+  - Linux
 tags:
-  - file-upload
+  - file-upload-abuse
   - lfi
   - race-condition
-  - brute-force
+  - hash-cracking
+  - ssh-key-trust-abuse
   - docker-escape
-  - cmd-injection
 ---
 
 # Introduction
@@ -35,10 +35,12 @@ Firstly, we need to discover the IP of the **infovore** machine. We will use **a
 
 I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP.
 
-Normally:
-* TTL 64: Linux machine
-* TTL 128 Windows machine. 
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py). 
+Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 In this case it appears to be a Linux machine. Now we will perform a port scan.
 

@@ -8,15 +8,15 @@ header:
   teaser: /assets/images/thm-publisher/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - easy
-  - linux
+  - TryHackMe
+  - Easy
+  - Linux
 tags:
-  - spip-4.2.0
+  - spip-4.2.0-rce
   - csrf-token-discovery
   - docker-escape
   - rshell-escape
-  - suid
+  - suid-abuse
 ---
 
 # Introduction
@@ -33,10 +33,10 @@ In this ocasion I'll firstly enumerate and then exploit a RCE in a vulnerable SP
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
 * TTL 128: Windows machine.
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.133.33

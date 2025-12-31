@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Mr Robot CTF
+title: TryHackMe - Mr Robot
 excerpt: Based on the iconic Mr. Robot show, this virtual machine invites you to step into the world of hacking and test your skills. Your objective is to explore the system, uncover vulnerabilities, and ultimately root the box.Hidden within the machine are three keys, each representing a milestone in your progress. To complete this capture the flag challenge, you’ll need to track down all three keys and prove your mastery. Can you channel your inner Elliot Alderson and find all three keys to finish the challenge?
 date: 2025-12-17
 classes: wide
@@ -8,14 +8,15 @@ header:
   teaser: /assets/images/thm-mrrobot/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - medium
-  - linux
+  - TryHackMe
+  - Medium
+  - Linux
 tags:
   - wp-user-enum
-  - brute-force
-  - file-upload
-  - suid
+  - password-bruteforcing
+  - file-upload-abuse
+  - rce
+  - suid-abuse
 ---
 
 
@@ -34,9 +35,9 @@ In this case I'll exploit a vulnerable WordPress site insipred in the Mr Robot s
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
 When we ping a machine that is in our local network, normally:
-* TTL ~64: Linux machine.
-* TTL ~128: Windows machine.
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.80.177.119

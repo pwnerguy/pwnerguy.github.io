@@ -8,14 +8,15 @@ header:
   teaser: /assets/images/vh.png
   teaser_home_page: true
 categories:
-  - vulnhub
-  - easy
-  - linux 
+  - VulnHub
+  - Easy
+  - Linux
 tags:
   - xss
+  - csrf
+  - cookie-hijacking
   - sqli
-  - xsrf
-  - brute-force
+  - hash-cracking
 ---
 # Introduction
 -------------
@@ -35,7 +36,10 @@ First, we need to discover the IP of the MyExpense machine.
 
 Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar.
 
-Usually, if the machine returns a TTL of 64 it's a Linux machine. If it returns a TTL of 128 it's a Windows machine. We can also use the util [**whichSystem**](https://github.com/Akronox/WichSystem.py). 
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ![](/assets/images/vh-myexpense/whichSystem.png)
 

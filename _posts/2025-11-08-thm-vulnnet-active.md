@@ -8,13 +8,14 @@ header:
   teaser: /assets/images/thm-vulnnet-active/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - medium
-  - windows
-  - ad
+  - TryHackMe
+  - Medium
+  - Windows
 tags:
-  - redis
   - smb-enum
+  - kerberos-user-enum
+  - hash-cracking
+  - specific-binary-abuse
   - gpo-abuse
 ---
 
@@ -32,10 +33,10 @@ In this ocasion, I'll abuse a vulnerable Redis DB service, use it to capture a N
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
-* TTL 128: Windows machine
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.234.191
@@ -150,7 +151,7 @@ I'll add in my /etc/hosts file the following line:
 ```
 
 
-## User enum
+## Kerberos User enum
 ----------
 
 ```java

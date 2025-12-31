@@ -8,13 +8,12 @@ header:
   teaser: /assets/images/thm-agentt/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - easy
-  - linux
+  - TryHackMe
+  - Easy
+  - Linux
 tags:
   - user-agent-rce
   - rshell-escape
-  - cmd-injection
 ---
 
 
@@ -24,7 +23,7 @@ This writeup documents the penetration testing of the [**Agent T**](https://tryh
 
 Agent T uncovered this website, which looks innocent enough, but something seems off about how the server responds...
 
-In this case we'll exploit a vulnerable PHP version
+In this case we'll exploit a vulnerable PHP version.
 
 <br>
 # Recon
@@ -34,10 +33,10 @@ In this case we'll exploit a vulnerable PHP version
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
 * TTL 128: Windows machine.
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.55.237

@@ -8,15 +8,16 @@ header:
   teaser: /assets/images/thm-attacktive-directory/logo.png
   teaser_home_page: true
 categories:
-  - tryhackme
-  - medium
-  - windows
-  - ad
+  - TryHackMe
+  - Medium
+  - Windows
 tags:
-  - asreproasting
+  - kerberos-user-enum
+  - as-rep-roasting
+  - hash-cracking
   - smb-enum
+  - ntds-creds-extraction
   - pth
-  - brute-force
 ---
 
 # Introduction
@@ -33,10 +34,10 @@ In this ocasion, I'll enumerate users, find users to do ASREPRoasting to generat
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
-When we ping a machine, normally:
-* TTL 64: Linux machine
-* TTL 128: Windows machine
-We can also use [**whichSystem**](https://github.com/Akronox/WichSystem.py)
+When we ping a machine that is in our local network, normally:
+* TTL 64: Linux machine.
+* TTL 128: Windows machine.
+We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
 
 ```java
 ❯ ping -c 1 10.10.221.181
@@ -217,10 +218,10 @@ I'll add this in my ``/etc/hosts`` file:
 <br>
 # Exploitation
 -----------
-## Kerberos Brute-Force
+## Kerberos User Enumeration
 ----------
 
-Now, we can perform **brute force** over Kerberos (port 88) with the tool [**Kerbrute**](https://github.com/ropnop/kerbrute/releases) to enumerate users, passwords and even password spray. I'll use the wordlist that you can find in the description of this machine.
+Now, we can perform **bruteforce** over Kerberos (port 88) with the tool [**Kerbrute**](https://github.com/ropnop/kerbrute/releases) to enumerate users, passwords and even password spray. I'll use the wordlist that you can find in the description of this machine.
 
 ```php
 ❯ ./kerbrute_linux_amd64 userenum --dc AttacktiveDirectory.spookysec.local -d spookysec.local userlist.txt
@@ -250,7 +251,7 @@ Version: v1.0.3 (9dad6e1) - 11/06/25 - Ronnie Flathers @ropnop
 The notable accounts of this list are ``svc-admin`` and ``backup``.
 
 
-## Abusing Kerberos: ASREPRoasting
+## Abusing Kerberos: AS-REP Roasting
 ------------
 
 > **ASREPRoasting** occurs when a user account has the privilege "Does not require Pre-Authentication" set. This means that the account **does not** need to provide valid identification before requesting a Kerberos Ticket for the specified user account.
@@ -331,7 +332,7 @@ We have base64 encoded backup credentials. Let's decode the credentials of the b
 # Post-Exploitation
 ---------
 
-The backup user is the backup account for the Domain Controller. This account has a unice permission that allows all AD changes to be synced with this user account and this includes password hashes.
+The backup user is the backup account for the Domain Controller. This account has a permission that allows all AD changes to be synced with this user account and this includes password hashes.
 
 I'll use a Impacket tool called ``secretsdump.py``. This will dump all password hashes that this user has.
 
