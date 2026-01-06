@@ -27,10 +27,8 @@ This writeup documents the penetration testing of the [**Mr Robot CTF**](https:/
 In this case I'll exploit a vulnerable WordPress site insipred in the Mr Robot show that I'm a huge fan of.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -107,10 +105,6 @@ Nmap done: 1 IP address (1 host up) scanned in 18.96 seconds
 
 The intrussion is going to be or at least start from port 80 and 443.
 
-
-## Web enum and fuzzing
-------------
-
 ```
 ❯ whatweb http://10.80.177.119
 http://10.80.177.119 [200 OK] Apache, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache], IP[10.80.177.119], Script, UncommonHeaders[x-mod-pagespeed], X-Frame-Options[SAMEORIGIN]
@@ -180,6 +174,12 @@ key-1-of-3.txt
 ```
 
 We found the first key! 
+
+
+<br>
+# Vulnerability Assessment
+------
+
 ``fsocity.dic`` is a dictionary. We can use it in the Intruder section of Burp Suite to bruteforce the WordPress login pannel and see whether a user is valid or not.
 
 After some time I found that a valid username is **Elliot**. To bruteforce the password we can use a faster tool like **Hydra**, sending the required POST data to log in.
@@ -197,11 +197,11 @@ In the port 443 we can find the same web but encrypted.
 https://10.80.177.119:443 [200 OK] Apache, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache], IP[10.80.177.119], Script, UncommonHeaders[x-mod-pagespeed], X-Frame-Options[SAMEORIGIN]
 ```
 
+Once we have access to the WP login panel, we can make a reverse shell since the user Elliot has access to the Editor section.
+
 <br>
 # Exploitation
 ------
-
-Once we have access to the WP login panel, we can make a reverse shell since the user Elliot has access to the Editor section.
 
 I'll use this PHP reverse shell https://github.com/pentestmonkey/php-reverse-shell, I'll copy the content of this reverse shell into the archive.php file in the Editor section of WordPress.
 
@@ -241,9 +241,6 @@ Node numbers 1-5 of 5 (fork)
 
 If you connect via SSH to the machine, you'll have access as ``robot`` and see the second flag.
 
-### tty treatment
------------
-
 ```bash
 script /dev/null -c bash
 Ctrl+Z
@@ -254,8 +251,7 @@ export SHELL=bash
 stty rows 44 columns 185
 ```
 
-## root privesc
------------
+Now, we need to privesc to root.
 
 ```python
 robot@ip-10-80-177-119:/$ find / -perm -4000 -ls 2>/dev/null

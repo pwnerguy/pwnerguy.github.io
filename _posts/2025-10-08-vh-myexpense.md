@@ -25,11 +25,10 @@ This writeup documents the penetration testing of the [**MyExpense: 1**](https:/
 You are Samuel Lamotte and you have been fired from **Futura Business Informatique**. The company owes you €750, but you were fired. Right now, you are in your car in front of the company. Furthermore, you are on the company's internal network with your laptop. Your login credentials before being fired were **samuel:fzghn4lw**. 
 
 Your mission will be to compromise the company's security in order to authorize the payment they owe you.
-
-# Recon
+<br>
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
+
 First, we need to discover the IP of the MyExpense machine.
 
 ![](/assets/images/vh-myexpense/arp-scan.png)
@@ -61,8 +60,6 @@ We can see some ports open. The most interesting port is the 80 port. Once we ha
 
 We are facing a **Debian Stretch**.
 
-## Web service enumeration
-------------
 Once the OS and exposed services have been enumerated it's time to enumerate the web server running on the port 80.
 
 ![](/assets/images/vh-myexpense/whatweb.png)
@@ -73,8 +70,6 @@ Once the OS and exposed services have been enumerated it's time to enumerate the
 
 As we know, we are facing a Debian Stretch machine running in the 80 port a web page with Apache and PHP.
 
-## Fuzzing and file enumeration
--------------
 We will apply brute force to the website to list directories and files. Once the attack finished, these were the results obtained:
 
 ![](/assets/images/vh-myexpense/gobuster1.png)
@@ -86,12 +81,11 @@ It detected several directories, among them it appears the admin panel at /admin
 We found a file 'admin.php' which we will access. We have an interesting table. We discover that our user is not samuel, but **slamotte**, and our account is currently disabled.
 
 ![](/assets/images/vh-myexpense/admin.php.png)
+<br>
 
-
-# Exploitation
------------
-## Identification and exploitation of vulnerabilities
+# Vulnerability Assessment
 ------------
+
 We will attempt to register a new account. After filling in the fields we notice the button is disabled; as simple as accessing the source code and removing the 'disabled' attribute from the button.
 
 ![](/assets/images/vh-myexpense/register.png)
@@ -99,6 +93,10 @@ We will attempt to register a new account. After filling in the fields we notice
 If we look at the admin.php file we will see that the new account has been created but is disabled. So we will try to inject JavaScript when creating another account by placing a simple alert in 'Firstname' and another in 'Lastname' to see if it is vulnerable to XSS. If we access admin/admin.php it is interpreted correctly.
 
 ![](/assets/images/vh-myexpense/alert.png)
+<br>
+
+# Exploitation
+------
 
 We will launch the following payload when creating a user:
 
@@ -162,8 +160,10 @@ Finally, we obtain a string of users and passwords. We will format it with nvim 
 
 ![](/assets/images/vh-myexpense/hashes.png)
 
-## Final exploitation
+<br>
+# Post-Exploitation
 -----------------
+
 To finish this intrusion we have to crack the hash of our target pbaudouin. We will do it online: [**https://hashes.com**](https://hashes.com)
 
 ![](/assets/images/vh-myexpense/cracked_hash.png)

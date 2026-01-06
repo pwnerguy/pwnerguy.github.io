@@ -22,15 +22,14 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Attacktive Directory**](https://tryhackme.com/room/attacktivedirectory) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion, I'll enumerate users, find users to do ASREPRoasting to generate a ticket , then enumerate shares as this user and finally perform Kerberoasting and perform PTH over this user.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -216,10 +215,8 @@ I'll add this in my ``/etc/hosts`` file:
 ```
 
 <br>
-# Exploitation
+# Vulnerability Assessment
 -----------
-## Kerberos User Enumeration
-----------
 
 Now, we can perform **bruteforce** over Kerberos (port 88) with the tool [**Kerbrute**](https://github.com/ropnop/kerbrute/releases) to enumerate users, passwords and even password spray. I'll use the wordlist that you can find in the description of this machine.
 
@@ -250,11 +247,11 @@ Version: v1.0.3 (9dad6e1) - 11/06/25 - Ronnie Flathers @ropnop
 
 The notable accounts of this list are ``svc-admin`` and ``backup``.
 
-
-## Abusing Kerberos: AS-REP Roasting
-------------
-
 > **ASREPRoasting** occurs when a user account has the privilege "Does not require Pre-Authentication" set. This means that the account **does not** need to provide valid identification before requesting a Kerberos Ticket for the specified user account.
+
+<br>
+# Exploitation
+-------
 
 [Impacket](https://github.com/SecureAuthCorp/impacket) has a tool called GetNPUsers.pythat will allow us to query ASReproastable accounts from the Key Distribution Center using the list of users we got before.
 
@@ -286,10 +283,6 @@ Press 'q' or Ctrl-C to abort, almost any other key for status
 Use the "--show" option to display all of the cracked passwords reliably
 Session completed. 
 ```
-
-
-## Shares Enumeration
-----------
 
 We have valid credentials in the domain, so now we can attempt to enumerate shared resources of the DC. I'll use ``smbclient``.
 
@@ -343,8 +336,7 @@ Administrator:500:***REDACTED***:::
 ...
 ```
 
-## PTH
-------
+Now, let's perform PTH.
 
 ```python
 ❯ evil-winrm -i 10.10.221.181 -u Administrator -H 0e0363213e37b94221497260b0bcb4fc

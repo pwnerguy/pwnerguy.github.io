@@ -32,9 +32,22 @@ body {
       background-color: #050D1A;
 }
 
-
 .sidebar {
   position: sticky;
-  top: 80px;
-  margin-top: 15px;
+  top: 80px; 
+  margin-top: 22px;
+  background-color: #050D1A;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    top: auto;
+    margin-top: 0;
+  }
+
+  .author__profile {
+    background-color: #050D1A;
+    margin-top: 0;
+  }
 }

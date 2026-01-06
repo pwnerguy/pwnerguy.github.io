@@ -24,10 +24,8 @@ This writeup documents the penetration testing of the [**Brooklyn Nine Nine**](h
 In this case I'll enumerate the web service and FTP service to brute-force SSH credentials and privesc with a SUID binary.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -118,10 +116,6 @@ To figure out the Ubuntu's version codename we need to search in the internet th
 
 We are facing an **Ubuntu Bionic**.
 
-
-## Web enumeration
-------------
-
 We can't do much with the SSH service since we don't have credentials yet, later we'll enumerate the port 21. Now it's time to enumerate the web server running on the port 80:
 
 ```
@@ -139,21 +133,19 @@ In the page code there's a interesting comment.
 
 Yes, I've heard of it, in fact, today in the Easy Peasy machine. Let's try the same thing, but we need a credential to do that.
 
-
-## FTP service enumeration
---------------
+Now, let's enumerate the FTP service.
 
 ![](/assets/images/thm-brooklyn-nine-nine/ftp.png)
 
-Jake's password seems to be very weak. 
+<br>
+# Vulnerability Assessment
+-----------
+
+Jake's password seems to be very weak. We can now try the user jake and brute-force his password to do the SSH intrussion. I'll try to crack jake's password with **Hydra**.
 
 <br>
 # Exploitation
------------
-## Identification and exploitation of vulnerabilities
-----------
-
-We can now try the user jake and brute-force his password to do the SSH intrussion. I'll try to crack jake's password with **Hydra**.
+----
 
 ```bash
 ❯ hydra -l jake -P /usr/share/wordlists/rockyou.txt 10.10.204.88 ssh

@@ -23,10 +23,8 @@ This writeup documents the penetration testing of the [**Corridor**](https://try
 In this case I'll exploit an IDOR vulnerability with a simple Bash script that hashes with md5 every payload the script tries.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -86,10 +84,6 @@ Nmap done: 1 IP address (1 host up) scanned in 8.48 seconds
 
 The intrussion is going to be from port 80, since it's the only open port.
 
-
-## Web enum and fuzzing
-------------
-
 ```
 ❯ whatweb http://10.10.74.221
 http://10.10.74.221 [200 OK] Bootstrap[4.5.0], Country[RESERVED][ZZ], HTML5, HTTPServer[Werkzeug/2.0.3 Python/3.10.2], IP[10.10.74.221], Python[3.10.2], Title[Corridor], Werkzeug[2.0.3]
@@ -140,7 +134,11 @@ The style sheet in question contains this:
 
 ![](/assets/images/thm-corridor/css.png)
 
-But let's focus on the name of the different door's directories. They look like hashes.
+<br>
+# Vulnerability Assessment
+------
+
+Let's focus on the name of the different door's directories. They look like hashes.
 
 ```php
 ❯ haiti c4ca4238a0b923820dcc509a6f75849b
@@ -154,13 +152,11 @@ They may be MD5 hashes.
 c4ca4238a0b923820dcc509a6f75849b
 ```
 
+So, they are md5 hashes and each door seems to be related to one number from 1 to X. We can easily think of an IDOR vulnerability in which we'll be accessing "doors" for example from 0 to 100 and see if we can access.
+
 <br>
 # Exploitation
-------
-## IDOR
---------
-
-So, they are md5 hashes and each door seems to be related to one number from 1 to X. We can easily think of an IDOR vulnerability in which we'll be accessing "doors" for example from 0 to 100 and see if we can access.
+-----
 
 I'll do a simple bash script.
 

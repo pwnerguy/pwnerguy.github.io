@@ -22,13 +22,14 @@ tags:
 
 # Introduction
 -------------
-This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. In this machine we'll exploit some php functions and lazy sys admins as the description says.
+This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. 
+
+In this ocasion I'll exploit some php functions and lazy sys admins' configurations as the description says.
 
 <br>
-# Recon
-------------------
-## Enumeration of exposed services
+# Information Gathering
 ----------------
+
 Firstly, we need to discover the IP of the **infovore** machine. We will use **arp-scan**.
 
 ![](/assets/images/vh-infovore/arp-scan.png)
@@ -60,8 +61,6 @@ We are facing a **Debian Buster**.
 
 ![](/assets/images/vh-infovore/codename.png)
 
-## Web enumeration
-------------
 Once the OS and exposed services have been enumerated it's time to enumerate the web server.
 
 ![](/assets/images/vh-infovore/whatweb.png)
@@ -70,10 +69,8 @@ Once the OS and exposed services have been enumerated it's time to enumerate the
 
 ![](/assets/images/vh-infovore/wappalyzer.png)
 
-It's seems that the page it's not configurated at all. The links and buttons doesn't work and we can't see anything interesting in the source code of the page. However, both **Wappalyzer** and **WhatWeb** are indicating that PHP is being used server-side. 
+It seems that the page it's not configurated at all. The links and buttons doesn't work and we can't see anything interesting in the source code of the page. However, both **Wappalyzer** and **WhatWeb** are indicating that PHP is being used server-side. 
 
-## Fuzzing and file enumeration
--------------
 Let's focus on fuzzing and PHP file enumeration. We'll brute-force the website to list directories and files. 
 
 ![](/assets/images/vh-infovore/gobuster.png)
@@ -83,10 +80,9 @@ We find out some directories and PHP files. We see the classic **info.php** wich
 ![](/assets/images/vh-infovore/phpinfo.png)
 
 <br>
-# Exploitation
+# Vulnerability Assesment
 -----------
-## Identification and exploitation of vulnerabilities
-------------
+
 In **php.info** you can search any directives to abuse them.
 
 - **disable_functions** - no disable functions, so we can use system, shell_exec, exec, to exeute commands.
@@ -101,6 +97,10 @@ I'll focus on the LFI one. Firstly, we need a LFI vuln. I will use Burp Suite to
 **wfuzz** detected the parameter **filename**.
 
 ![](/assets/images/vh-infovore/wfuzz.png)
+
+<br>
+# Exploitation
+-----
 
 With the filename parameter we can see the content of /etc/passwd. However, we can't reach any files we upload through the POST request. 
 
@@ -316,11 +316,9 @@ Basically, it will try to upload a file and point it many times until the file's
 ![](/assets/images/vh-infovore/phpinfolfi.py.png)
 
 <br>
-
 # Post-Exploitation
 ----------
-### tty treatment
------------
+
 ```bash
 script /dev/null -c bash
 Ctrl+Z
@@ -333,8 +331,6 @@ stty rows 44 columns 185
 
 If we run the command ``hostname -I`` we will notice that we are not in the real machine, we are in a **container**.
 
-## Escaping the container
----------
 - We have no file /var/run/docker.sock, docker it's not installed.
 - **capsh** it's not installed.
 - No users directories in /home and no users with a shell (only root and we can't access it)

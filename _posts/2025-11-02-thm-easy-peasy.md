@@ -25,10 +25,8 @@ This writeup documents the penetration testing of the [**Easy Peasy**](https://t
 In this case I'll play a CTF that is composed of mostly of enumeration, brute-forcing and decoding tasks and finally privesc with a vulnerable cronjob.
 
 <br>
-# Recon
+# Information Gathering, Vulnerability Assessment and Exploitation
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -109,10 +107,6 @@ The nginx version is 1.16.1. The intrussion is probably going to be, or at least
 To figure out the Ubuntu's version codename we need to search in the internet the SSH version followed by '**launchpad**': https://launchpad.net/ubuntu/+source/openssh/1:7.6p1-4ubuntu0.3
 
 We are facing an **Ubuntu Bionic**.
-
-
-## Web enumeration and fuzzing
-------------
 
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 

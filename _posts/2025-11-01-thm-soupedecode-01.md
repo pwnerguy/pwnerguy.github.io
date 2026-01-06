@@ -26,10 +26,8 @@ This writeup documents the penetration testing of the [**Soupedecode**](https://
 In this ocasion, I'll get access in a Windows Server 2022 Domain Controller by enumerating the SMB service, perform a RID bruteforce attack and Kerberoasting to privesc.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -176,10 +174,6 @@ I'll add this in my ``/etc/hosts`` file:
 10.10.34.153 DC01.SOUPEDECODE.LOCAL SOUPEDECODE.LOCAL
 ```
 
-
-## SMB shares enumeration
-----
-
 Using **netexec** I'll enumerate SMB shares and see if we can log in with the `guest` user and grants us read access to the **IPC$** share.
 
 ```java
@@ -199,10 +193,6 @@ SMB         10.10.34.153    445    DC01             Users
 ```
 
 We have read access to the $IPC shared resource.
-
-
-## User enumeration
-----
 
 Now, we can perform a **RID bruteforce attack** with netexec to enumerate users.
 
@@ -236,10 +226,8 @@ I'll save in valid_usernames.txt a list with all the users for later.
 ```
 
 <br>
-# Exploitation
+# Vulnerability Assessment
 -----------
-## Identification and exploitation of vulnerabilities
-------------
 
 At this point we can try to bruteforce user's passwords using valid_usernames.txt and using the domain name, year, or some popular weak passwords, but all of that didn't worked.
 
@@ -249,6 +237,10 @@ But there's something that worked. That was attempting to log in the domain usin
 ❯ nxc smb dc01.soupedecode.local -u valid_usernames.txt -p valid_usernames.txt --no-bruteforce --continue-on-success
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317
 ```
+
+<br>
+# Exploitation
+------
 
 We found the credentials ``ybob317:ybob317``
 
@@ -288,9 +280,6 @@ drw-rw-rw-          0  Mon Jun 17 19:24:32 2024 ..
 <br>
 # Post-Exploitation
 -----------
-
-## Kerberoasting
-------
 
 > **Kerberoasting** is a post-exploitation attack technique targeting the Kerberos authentication protocol, enabling adversaries to extract encrypted service account credentials from Active Directory.
 

@@ -26,10 +26,8 @@ This writeup documents the penetration testing of the [**Publisher**](https://tr
 In this ocasion I'll firstly enumerate and then exploit a RCE in a vulnerable SPIP version to get a reverse shell, scape a Docker container, scape an rshell and finally abuse of an SUID binary.
 
 <br>
-# Recon
+# Information Gathering
 ------------------
-## Enumeration of exposed services
-----------------
 
 Once we have discovered the IP of the machine we need to enumerate as much information as possible.
 
@@ -102,10 +100,6 @@ To figure out the Ubuntu's version codename we need to search in the internet th
 
 We are facing an **Ubuntu Focal**.
 
-
-## Web enumeration
-------------
-
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
 ```
@@ -116,9 +110,6 @@ http://10.10.133.33 [200 OK] Apache[2.4.41], Country[RESERVED][ZZ], HTTPServer[U
 ![](/assets/images/thm-publisher/web.png)
 
 We have nothing interesting on either the website or the source code. Both [**Wappalyzer**](https://www.wappalyzer.com/) and nmap confirm the Apache version which is **2.4.41**.
-
-## Fuzzing and file enumeration
-----
 
 ```java
 ❯ gobuster dir -u 10.10.133.33 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
@@ -152,10 +143,8 @@ Finished
 ![](/assets/images/thm-publisher/web2.png)
 
 <br>
-# Exploitation
+# Vulnerability Assessment
 -----------
-## Identification and exploitation of vulnerabilities
-------------
 
 Let's search an exploit with **searchsploit** for the 4.2.0 version of SPIP.
 
@@ -244,6 +233,10 @@ if __name__ == '__main__':
     send_payload(options.url, csrf, serialized)
 ```
 
+<br>
+# Exploitation
+-----
+
 Now, let's try to get a reverse shell and get access to the machine.
 
 ![](/assets/images/thm-publisher/reverse_shell.png)
@@ -252,8 +245,6 @@ Now, let's try to get a reverse shell and get access to the machine.
 # Post-Exploitation
 ----------
 
-### tty treatment
------------
 ```bash
 script /dev/null -c bash
 Ctrl+Z
