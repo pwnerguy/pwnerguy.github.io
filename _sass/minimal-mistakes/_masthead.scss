@@ -86,3 +86,12 @@
     font-weight: 700;
   }
 }
+
+img[src="/assets/images/logo.png"] {
+  opacity: 0.95;
+}
+
+img[src="/assets/images/logo.png"]:hover {
+  opacity: 1;
+  filter: brightness(1.2);
+}

@@ -50,4 +50,24 @@ body {
     background-color: #050D1A;
     margin-top: 0;
   }
+
+  .author__urls.social-icons.is--visible {
+    background-color: #050D1A;
+    position: relative;
+    z-index: 9999;
+  }
+ 
+  .author__urls.social-icons.is--visible img[alt="HackTheBox Badge"] {
+    width: 120px !important;
+    height: auto !important;
+  }
+
+  .author__urls.social-icons.is--visible img[alt="TryHackMe Badge"] {
+    width: 120px !important;
+    height: auto !important;
+  }
+
+
 }
+
+
