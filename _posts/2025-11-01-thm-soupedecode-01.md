@@ -1,7 +1,6 @@
 ---
 layout: single
 title: TryHackMe - Soupedecode 01
-excerpt: Soupedecode is an intense and engaging challenge in which players must compromise a domain controller by exploiting Kerberos authentication, navigating through SMB shares, performing password spraying, and utilizing Pass-the-Hash techniques. Prepare to test your skills and strategies in this multifaceted cyber security adventure. From there, you’ll need to escalate privileges and demonstrate full control of the environment.
 date: 2025-11-01
 classes: wide
 header:

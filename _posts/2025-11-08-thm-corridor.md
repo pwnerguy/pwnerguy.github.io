@@ -1,7 +1,6 @@
 ---
 layout: single
 title: TryHackMe - Corridor
-excerpt: You have found yourself in a strange corridor, with no clear path back to where you started. In this challenge, you will be exploring potential IDOR vulnerabilities that may reveal unexpected access points.As you navigate through the website, pay close attention to the URL endpoints you encounter. The hexadecimal values embedded within these paths could serve as clues. By piecing together these fragments, you may discover hidden areas and ultimately find your way back.
 date: 2025-11-08
 classes: wide
 header:

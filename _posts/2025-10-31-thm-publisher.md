@@ -1,7 +1,6 @@
 ---
 layout: single
 title: TryHackMe - Publisher
-excerpt: The Publisher CTF machine is a simulated environment hosting some services. Through a series of enumeration techniques, including directory fuzzing and version identification, a vulnerability is discovered, allowing for RCE. Attempts to escalate privileges using a custom binary are hindered by restricted access to critical system files and directories, necessitating a deeper exploration to ultimately exploit a loophole that enables the execution of an unconfined bash shell and achieve privilege escalation.
 date: 2025-10-31
 classes: wide
 header:

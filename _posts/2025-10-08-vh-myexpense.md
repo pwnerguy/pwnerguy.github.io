@@ -1,7 +1,6 @@
 ---
 layout: single
 title: "VulnHub - MyExpense: 1"
-excerpt: MyExpense is a deliberately vulnerable web application that allows you to train in detecting and exploiting different web vulnerabilities. Unlike a more traditional "challenge" application (which allows you to train on a single specific vulnerability), MyExpense contains a set of vulnerabilities you need to exploit to achieve the whole scenario.
 date: 2025-10-08
 classes: wide
 header:

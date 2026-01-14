@@ -1,7 +1,6 @@
 ---
 layout: single
 title: TryHackMe - Billing
-excerpt: "Some mistakes can be costly. In this room, your goal is to take advantage of a small oversight, gain an initial foothold, and work your way toward a full shell on the target system. Once inside, explore the environment, understand how the service is structured, and identify the path that will allow you to escalate your privileges. Remember that this challenge is designed to test your enumeration skills and your ability to spot weak configurations. Note: Bruteforcing is out of scope for this room"
 date: 2026-01-07
 classes: wide
 header:

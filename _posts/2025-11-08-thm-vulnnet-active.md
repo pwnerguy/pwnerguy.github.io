@@ -1,7 +1,6 @@
 ---
 layout: single
 title: "TryHackMe - VulnNet: Active"
-excerpt: VulnNet Entertainment has recently migrated their entire infrastructure to a new environment and, once again, they have brought you on board as a core penetration tester. Your mission is to thoroughly assess the security of their systems, identify weaknesses, and exploit them to gain initial access. This engagement will test your ability to perform reconnaissance, uncover hidden entry points, and chain vulnerabilities together to demonstrate the risks facing the organization.
 date: 2025-11-08
 classes: wide
 header:

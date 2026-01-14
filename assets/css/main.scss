@@ -7,7 +7,6 @@
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
 
-
 ::selection {
   background-color: #c8e1ff;
   color: #000;
@@ -39,35 +38,25 @@ body {
   background-color: #050D1A;
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    position: static;
-    top: auto;
-    margin-top: 0;
-  }
-
-  .author__profile {
-    background-color: #050D1A;
-    margin-top: 0;
-  }
-
-  .author__urls.social-icons.is--visible {
-    background-color: #050D1A;
-    position: relative;
-    z-index: 9999;
-  }
- 
-  .author__urls.social-icons.is--visible img[alt="HackTheBox Badge"] {
-    width: 120px !important;
-    height: auto !important;
-  }
-
-  .author__urls.social-icons.is--visible img[alt="TryHackMe Badge"] {
-    width: 120px !important;
-    height: auto !important;
-  }
-
-
+.archive__item {
+  margin-bottom: 20px;
 }
 
+article img {
+  float: right;
+  height: 82px;
+}
+
+@media (max-width: 1022px) {
+
+  .sidebar {
+    display: none;
+  }
+
+  article img {
+    float: right;
+   height: 60px;
+  }
+
+}
 

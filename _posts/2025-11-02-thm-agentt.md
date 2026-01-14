@@ -1,7 +1,6 @@
 ---
 layout: single
 title: TryHackMe - Agent T
-excerpt: Something seems a little off with the server. Agent T recently uncovered a website that, at first glance, appears completely innocent. However, upon closer inspection, the way the server responds raises suspicion and hints at hidden functionality beneath the surface. Strange behaviors and unusual patterns suggest that there may be more to this system than meets the eye. The challenge lies in peeling back these layers and interpretating signals. What appears ordinary may in fact be the gateway to something far more complex.
 date: 2025-11-02
 classes: wide
 header:
