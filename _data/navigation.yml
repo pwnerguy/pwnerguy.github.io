@@ -5,6 +5,6 @@ main:
     url: /categories/
   - title: "Tags"
     url: /tags/
-  - title: "CTF Spreadsheet"
+  - title: "Machines Spreadsheet"
     url: https://docs.google.com/spreadsheets/d/19fnbpEfUClo4aR6JX3Y6YrD6LnVeqrOx/edit?gid=1310585786#gid=1310585786
     external: true
