@@ -42,7 +42,7 @@ body {
   margin-bottom: 20px;
 }
 
-article img {
+article > img {
   float: right;
   height: 82px;
 }
@@ -53,7 +53,7 @@ article img {
     display: none;
   }
 
-  article img {
+  article > img {
     float: right;
     height: 60px;
   }
