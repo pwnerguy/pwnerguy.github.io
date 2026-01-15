@@ -21,7 +21,7 @@ title_separator          : "-"
 name                     : "pwnerguy"
 description              : "Hacking my way through<br>cybersecurity, pentesting<br>and CTFs."
 url                      : "https://pwnerguy.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
-baseurl                  : # the subpath of your site, e.g. "/blog"
+baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "pwnerguy/pwnerguy.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 logo                     : "/assets/images/logo.png"
 teaser                   : # path of fallback teaser image, e.g. "/assets/images/500x300.png"
@@ -59,8 +59,8 @@ reCaptcha:
   secret                 :
 atom_feed:
   path                   : # blank (default) uses feed.xml
-search                   : # true, false (default)
-search_full_content      : # true, false (default)
+search                   : true # true, false (default)
+search_full_content      : true # true, false (default)
 search_provider          : # lunr (default), algolia, google
 algolia:
   application_id         : # YOUR_APPLICATION_ID
@@ -83,13 +83,17 @@ facebook:
   username               :
   app_id                 :
   publisher              :
-og_image                 : # Open Graph/Twitter default site image
+og_image                 : "/assets/images/logo.png" # Open Graph/Twitter default site image
 # For specifying social profiles
 # - https://developers.google.com/structured-data/customize/social-profiles
 social:
   type                   : # Person or Organization (defaults to Person)
   name                   : # If the user or organization name differs from the site's name
   links: # An array of links to social media profiles
+    - "https://www.linkedin.com/in/r-mar"
+    - "https://github.com/pwnerguy" 
+    - "https://tryhackme.com/p/pwnerguy" 
+    - "https://app.hackthebox.com/users/3026377" 
 
 # Analytics
 analytics:
@@ -203,7 +207,7 @@ sass:
 permalink: /:title/
 paginate: 10 # amount of posts to show
 paginate_path: /page:num/
-timezone: # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+timezone: Europe/Madrid # https://en.wikipeydia.org/wiki/List_of_tz_database_time_zones
 
 
 # Plugins (previously gems:)
