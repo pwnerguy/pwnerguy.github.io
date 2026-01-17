@@ -108,7 +108,9 @@ author:
   name             : "pwnerguy"
   avatar           : "/assets/images/pwnerguy.png"
   bio              : "Shell & Coffee is an offensive security<br>blog focused on solving practical<br>labs from the Hack The Box,<br>TryHackMe and VulnHub platforms."
-  location         : 
+  location         :
+  profile          : true
+  sticky           : false
   email            : "rmp.it@proton.me"
   uri              :
   home             : # null (default), "absolute or relative url to link to author home"
