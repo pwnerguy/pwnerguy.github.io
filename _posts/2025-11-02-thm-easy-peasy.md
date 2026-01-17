@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Easy Peasy
+title: THM - Easy Peasy
 date: 2025-11-02
 classes: wide
 header:
@@ -19,6 +19,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Easy Peasy**](https://tryhackme.com/room/easypeasyctf) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this case I'll play a CTF that is composed of mostly of enumeration, brute-forcing and decoding tasks and finally privesc with a vulnerable cronjob.

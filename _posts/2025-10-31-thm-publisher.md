@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Publisher
+title: THM - Publisher
 date: 2025-10-31
 classes: wide
 header:
@@ -20,6 +20,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Publisher**](https://tryhackme.com/room/publisher) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion I'll firstly enumerate and then exploit a RCE in a vulnerable SPIP version to get a reverse shell, scape a Docker container, scape an rshell and finally abuse of an SUID binary.

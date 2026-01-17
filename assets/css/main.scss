@@ -47,6 +47,12 @@ article > img {
   height: 82px;
 }
 
+
+a:visited {
+  color: inherit;
+  text-decoration: inherit;
+}
+
 @media (max-width: 1022px) {
 
   .sidebar {

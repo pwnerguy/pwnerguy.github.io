@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "VulnHub - Infovore: 1"
+title: "VH - Infovore: 1"
 date: 2025-10-10
 classes: wide
 header:
@@ -21,6 +21,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. 
 
 In this ocasion I'll exploit some php functions and lazy sys admins' configurations as the description says.

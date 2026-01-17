@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "VulnHub - MyExpense: 1"
+title: "VH - MyExpense: 1"
 date: 2025-10-08
 classes: wide
 header:
@@ -19,6 +19,7 @@ tags:
 ---
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**MyExpense: 1**](https://www.vulnhub.com/entry/myexpense-1,405/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform.
 
 You are Samuel Lamotte and you have been fired from **Futura Business Informatique**. The company owes you €750, but you were fired. Right now, you are in your car in front of the company. Furthermore, you are on the company's internal network with your laptop. Your login credentials before being fired were **samuel:fzghn4lw**. 

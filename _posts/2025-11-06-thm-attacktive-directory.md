@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Attacktive Directory
+title: THM - Attacktive Directory
 date: 2025-11-06
 classes: wide
 header:

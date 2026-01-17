@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Corridor
+title: THM - Corridor
 date: 2025-11-08
 classes: wide
 header:
@@ -17,6 +17,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Corridor**](https://tryhackme.com/room/corridor) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this case I'll exploit an IDOR vulnerability with a simple Bash script that hashes with md5 every payload the script tries.

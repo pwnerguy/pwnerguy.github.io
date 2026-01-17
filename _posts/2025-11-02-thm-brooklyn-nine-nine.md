@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Brooklyn Nine Nine
+title: THM - Brooklyn Nine Nine
 date: 2025-11-02
 classes: wide
 header:
@@ -18,6 +18,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Brooklyn Nine Nine**](https://tryhackme.com/room/brooklynninenine) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this case I'll enumerate the web service and FTP service to brute-force SSH credentials and privesc with a SUID binary.

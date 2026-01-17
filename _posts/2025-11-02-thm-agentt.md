@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Agent T
+title: THM - Agent T
 date: 2025-11-02
 classes: wide
 header:
@@ -18,6 +18,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Agent T**](https://tryhackme.com/room/agentt) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 Agent T uncovered this website, which looks innocent enough, but something seems off about how the server responds... 

@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Mr Robot
+title: THM - Mr Robot
 date: 2025-12-17
 classes: wide
 header:
@@ -21,6 +21,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Mr Robot CTF**](https://tryhackme.com/room/mrrobot) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this case I'll exploit a vulnerable WordPress site insipred in the Mr Robot show that I'm a huge fan of.

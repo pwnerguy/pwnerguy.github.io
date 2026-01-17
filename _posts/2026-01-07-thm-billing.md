@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Billing
+title: THM - Billing
 date: 2026-01-07
 classes: wide
 header:
@@ -20,6 +20,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Billing**](https://tryhackme.com/room/billing) machine from the [**TryHackMe**](https://tryhackme.com/) platform. 
 
 In this case I'll exploit a vulnerable site with a LFI used as RCE to gain a reverse shell and privesc abusing a sudo binary. Note from the description: Bruteforcing is out of scope for this room.

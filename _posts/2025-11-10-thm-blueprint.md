@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Blueprint
+title: THM - Blueprint
 date: 2025-11-10
 classes: wide
 header:
@@ -17,6 +17,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Blueprint**](https://tryhackme.com/room/blueprint) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion, I'll exploit a vulnerable e-commerce platform called osEcommerce through a LFI vulnerability.

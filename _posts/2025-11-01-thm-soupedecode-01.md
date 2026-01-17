@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Soupedecode 01
+title: THM - Soupedecode 01
 date: 2025-11-01
 classes: wide
 header:
@@ -20,6 +20,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Soupedecode**](https://tryhackme.com/room/soupedecode01) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion, I'll get access in a Windows Server 2022 Domain Controller by enumerating the SMB service, perform a RID bruteforce attack and Kerberoasting to privesc.

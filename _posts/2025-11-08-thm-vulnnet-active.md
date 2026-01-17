@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "TryHackMe - VulnNet: Active"
+title: "THM - VulnNet: Active"
 date: 2025-11-08
 classes: wide
 header:
@@ -20,6 +20,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**VulnNet: Active**](https://tryhackme.com/room/vulnnetactive) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this ocasion, I'll abuse a vulnerable Redis DB service, use it to capture a NTLM hash to access the machine and finally perform a GPO Abuse to escalate privileges.

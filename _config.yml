@@ -15,13 +15,13 @@ remote_theme             : "mmistakes/minimal-mistakes@4.15.1"
 minimal_mistakes_skin    : "haxor" # "haxor", "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
 
 # Site Settings
-locale                   : "en-US"
+locale                   : "en-GB"
 title                    : "Shell & Coffee"
 title_separator          : "-"
-name                     : "pwnerguy"
-description              : "Hacking my way through<br>cybersecurity, pentesting<br>and CTFs."
+name                     : "Shell & Coffee by pwnerguy"
+description              : "Shell & Coffee is a blog about offensive security focused on solving practical labs from the Hack The Box, TryHackMe, and VulnHub platforms."
 url                      : "https://pwnerguy.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
-baseurl                  : # the subpath of your site, e.g. "/blog"
+baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "pwnerguy/pwnerguy.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 logo                     : "/assets/images/logo.png"
 teaser                   : # path of fallback teaser image, e.g. "/assets/images/500x300.png"
@@ -71,7 +71,7 @@ google:
   search_engine_id       : # YOUR_SEARCH_ENGINE_ID
   instant_search         : # false (default), true
 # SEO Related
-google_site_verification :
+google_site_verification : googlec3517029c72982e9.html
 bing_site_verification   :
 yandex_site_verification :
 naver_site_verification  :
@@ -87,8 +87,8 @@ og_image                 : "/assets/images/logo.png" # Open Graph/Twitter defaul
 # For specifying social profiles
 # - https://developers.google.com/structured-data/customize/social-profiles
 social:
-  type                   : # Person or Organization (defaults to Person)
-  name                   : # If the user or organization name differs from the site's name
+  type                   : Person # Person or Organization (defaults to Person)
+  name                   : "Rubén (pwnerguy)" # If the user or organization name differs from the site's name
   links: # An array of links to social media profiles
     - "https://www.linkedin.com/in/r-mar"
     - "https://github.com/pwnerguy" 
@@ -107,7 +107,7 @@ analytics:
 author:
   name             : "pwnerguy"
   avatar           : "/assets/images/pwnerguy.png"
-  bio              : "Hacking my way through<br>cybersecurity, pentesting,<br>and CTFs."
+  bio              : "Shell & Coffee is an offensive security<br>blog focused on solving practical<br>labs from the Hack The Box,<br>TryHackMe and VulnHub platforms."
   location         : 
   email            : "rmp.it@proton.me"
   uri              :
@@ -218,6 +218,7 @@ plugins:
   - jekyll-feed
   - jemoji
   - jekyll-include-cache
+  - jekyll-seo-tag
 
 # mimic GitHub Pages with --safe
 whitelist:

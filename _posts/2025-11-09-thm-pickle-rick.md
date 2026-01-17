@@ -1,6 +1,6 @@
 ---
 layout: single
-title: TryHackMe - Pickle Rick
+title: THM - Pickle Rick
 date: 2025-11-09
 classes: wide
 header:
@@ -17,6 +17,7 @@ tags:
 
 # Introduction
 -------------
+
 This writeup documents the penetration testing of the [**Pickle Rick**](https://tryhackme.com/room/picklerick) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
 
 In this case I'll try to log into a panel which is vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
