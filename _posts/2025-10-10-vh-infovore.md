@@ -22,9 +22,7 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. 
-
-In this ocasion I'll exploit some php functions and lazy sys admins' configurations as the description says.
+This writeup documents the penetration testing of the [**infovore: 1**](https://www.vulnhub.com/entry/infovore-1,496/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform.  In this ocasion I'll exploit some php functions and lazy sys admins' configurations as the description says.
 
 <br>
 # Information Gathering
@@ -36,12 +34,11 @@ Firstly, we need to discover the IP of the **infovore** machine. We will use **a
 
 I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP.
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
 In this case it appears to be a Linux machine. Now we will perform a port scan.
 
@@ -320,13 +317,14 @@ Basically, it will try to upload a file and point it many times until the file's
 ----------
 
 ```bash
-script /dev/null -c bash
-Ctrl+Z
-stty raw -echo; fg
-reset xterm
-export TERM=xterm
-export SHELL=bash
-stty rows 44 columns 185
+# tty upgrading
+❯ script /dev/null -c bash
+❯ Ctrl+Z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 44 columns 185
 ```
 
 If we run the command ``hostname -I`` we will notice that we are not in the real machine, we are in a **container**.

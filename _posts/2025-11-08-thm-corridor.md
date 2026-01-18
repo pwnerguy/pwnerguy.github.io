@@ -18,23 +18,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Corridor**](https://tryhackme.com/room/corridor) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
-
-In this case I'll exploit an IDOR vulnerability with a simple Bash script that hashes with md5 every payload the script tries.
+This writeup documents the penetration testing of the [**Corridor**](https://tryhackme.com/room/corridor) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this case I'll exploit an IDOR vulnerability with a simple Bash script that hashes with md5 every payload the script tries.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.10.74.221
+```
+```
 PING 10.10.74.221 (10.10.74.221) 56(84) bytes of data.
 64 bytes from 10.10.74.221: icmp_seq=1 ttl=63 time=55.8 ms
 
@@ -43,10 +42,12 @@ PING 10.10.74.221 (10.10.74.221) 56(84) bytes of data.
 rtt min/avg/max/mdev = 55.785/55.785/55.785/0.000 ms
 ```
 
-In this case, it seems to be a Linux machine. Let's do a port scan with nmap.
+In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.74.221 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 19:23 CET
 Initiating SYN Stealth Scan at 19:23
@@ -66,10 +67,10 @@ Nmap done: 1 IP address (1 host up) scanned in 16.32 seconds
            Raw packets sent: 80579 (3.545MB) | Rcvd: 65971 (2.639MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p80 10.10.74.221 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 19:24 CET
 Nmap scan report for 10.10.74.221
 Host is up (0.10s latency).
@@ -84,8 +85,10 @@ Nmap done: 1 IP address (1 host up) scanned in 8.48 seconds
 
 The intrussion is going to be from port 80, since it's the only open port.
 
-```
+```bash
 ❯ whatweb http://10.10.74.221
+```
+```
 http://10.10.74.221 [200 OK] Bootstrap[4.5.0], Country[RESERVED][ZZ], HTML5, HTTPServer[Werkzeug/2.0.3 Python/3.10.2], IP[10.10.74.221], Python[3.10.2], Title[Corridor], Werkzeug[2.0.3]
 ```
 
@@ -97,8 +100,10 @@ The web server of this machine is ``Werkzeug/2.0.3 Python/3.10.2``.
 
 Let's fuzz some directories.
 
-```java
+```bash
 ❯  gobuster dir -u 10.10.74.221 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20
+```
+```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -140,8 +145,10 @@ The style sheet in question contains this:
 
 Let's focus on the name of the different door's directories. They look like hashes.
 
-```php
+```bash
 ❯ haiti c4ca4238a0b923820dcc509a6f75849b
+```
+```
 MD5 [HC: 0] [JtR: raw-md5]
 ```
 
@@ -149,6 +156,8 @@ They may be MD5 hashes.
 
 ```bash
 ❯ echo -n "1" | md5sum
+```
+```
 c4ca4238a0b923820dcc509a6f75849b
 ```
 

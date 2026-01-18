@@ -21,23 +21,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Publisher**](https://tryhackme.com/room/publisher) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
-
-In this ocasion I'll firstly enumerate and then exploit a RCE in a vulnerable SPIP version to get a reverse shell, scape a Docker container, scape an rshell and finally abuse of an SUID binary.
+This writeup documents the penetration testing of the [**Publisher**](https://tryhackme.com/room/publisher) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this ocasion I'll firstly enumerate and then exploit a RCE in a vulnerable SPIP version to get a reverse shell, scape a Docker container, scape an rshell and finally abuse of an SUID binary.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.10.133.33
+```
+```
 PING 10.10.133.33 (10.10.133.33) 56(84) bytes of data.
 64 bytes from 10.10.133.33: icmp_seq=1 ttl=63 time=54.4 ms
 
@@ -48,8 +47,10 @@ rtt min/avg/max/mdev = 54.388/54.388/54.388/0.000 m
 
 In this case, it seems to be a Linux machine. Let's perform a port scan with nmap.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.133.33 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-31 16:45 CET
 Initiating SYN Stealth Scan at 16:45
@@ -71,10 +72,10 @@ Nmap done: 1 IP address (1 host up) scanned in 16.39 seconds
            Raw packets sent: 81300 (3.577MB) | Rcvd: 69984 (2.799MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p22,80 10.10.133.33 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-31 16:46 CET
 Nmap scan report for 10.10.133.33
 Host is up (0.055s latency).
@@ -102,8 +103,10 @@ We are facing an **Ubuntu Focal**.
 
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
-```
+```bash
 ❯ whatweb http://10.10.133.33
+```
+```
 http://10.10.133.33 [200 OK] Apache[2.4.41], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.133.33], Title[Publisher's Pulse: SPIP Insights & Tips]
 ```
 
@@ -111,8 +114,10 @@ http://10.10.133.33 [200 OK] Apache[2.4.41], Country[RESERVED][ZZ], HTTPServer[U
 
 We have nothing interesting on either the website or the source code. Both [**Wappalyzer**](https://www.wappalyzer.com/) and nmap confirm the Apache version which is **2.4.41**.
 
-```java
+```bash
 ❯ gobuster dir -u 10.10.133.33 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
+```
+```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -148,8 +153,10 @@ Finished
 
 Let's search an exploit with **searchsploit** for the 4.2.0 version of SPIP.
 
-```java
+```bash
 ❯ searchsploit SPIP 4.2.0
+```
+```
 ------------------------------------------------------------------------------------------------
  Exploit Title                                                            |  Path
 ------------------------------------------------------------------------------------------------
@@ -246,13 +253,14 @@ Now, let's try to get a reverse shell and get access to the machine.
 ----------
 
 ```bash
-script /dev/null -c bash
-Ctrl+Z
-stty raw -echo; fg
-reset xterm
-export TERM=xterm
-export SHELL=bash
-stty rows 44 columns 185
+# tty upgrading
+❯ script /dev/null -c bash
+❯ Ctrl+Z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 44 columns 185
 ```
 
 Now, if you look at the IP of the machine, you'll see that we are in a **Docker container** inside the Publisher machine. We need to get out of it.
@@ -269,15 +277,19 @@ In think's home directory you'll find the same flag we found before.
 
 **Linpeas** show us an interesting SUID file.
 
-```
+```bash
 think@ip-10-10-133-33:/etc/apparmor.d$ ls -l /usr/sbin/run_container
+```
+```
 -rwsr-sr-x 1 root root 16760 Nov 14  2023 /usr/sbin/run_container
 ```
 
 Using the command ``strings`` we can see that it executes a bash scrip: ``/opt/run_container.sh``.
 
-```
+```bash
 think@ip-10-10-133-33:/etc/apparmor.d$ ls -l /opt/run_container.sh
+```
+```
 -rwxrwxrwx 1 root root 1715 Jan 10  2024 /opt/run_container.sh
 ```
 

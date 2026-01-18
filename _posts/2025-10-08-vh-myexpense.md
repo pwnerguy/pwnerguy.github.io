@@ -20,11 +20,7 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**MyExpense: 1**](https://www.vulnhub.com/entry/myexpense-1,405/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform.
-
-You are Samuel Lamotte and you have been fired from **Futura Business Informatique**. The company owes you €750, but you were fired. Right now, you are in your car in front of the company. Furthermore, you are on the company's internal network with your laptop. Your login credentials before being fired were **samuel:fzghn4lw**. 
-
-Your mission will be to compromise the company's security in order to authorize the payment they owe you.
+This writeup documents the penetration testing of the [**MyExpense: 1**](https://www.vulnhub.com/entry/myexpense-1,405/) machine. This machine has been downloaded from the [**VulnHub**](https://vulnhub.com) platform. You are Samuel Lamotte and you have been fired from **Futura Business Informatique**. The company owes you €750, but you were fired. Right now, you are in your car in front of the company. Furthermore, you are on the company's internal network with your laptop. Your login credentials before being fired were **samuel:fzghn4lw**. Your mission will be to compromise the company's security in order to authorize the payment they owe you.
 <br>
 # Information Gathering
 ------------------
@@ -35,10 +31,11 @@ First, we need to discover the IP of the MyExpense machine.
 
 Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
+
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
 ![](/assets/images/vh-myexpense/whichSystem.png)
 

