@@ -7,6 +7,14 @@
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
 
+a:visited {
+  color: #95DCE0;
+}
+
+a:hover {
+  color: #B0E5E8;
+}
+
 ::selection {
   background-color: #c8e1ff;
   color: #000;
