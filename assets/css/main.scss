@@ -7,6 +7,8 @@
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
 
+/* a:visited = a:link */
+
 .archive__item-title a:visited {
   color: #95DCE0 !important;
 }
@@ -14,6 +16,34 @@
 .archive__item-title a:hover {
   color: #B0E5E8 !important;
 }
+
+/* Scrollbar for Chromium based browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Scrollbar for Firefox based browsers */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Mouse selection over text */
 
 ::selection {
   background-color: #c8e1ff;
