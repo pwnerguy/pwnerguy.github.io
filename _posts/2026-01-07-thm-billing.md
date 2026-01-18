@@ -114,14 +114,12 @@ We see in nmap's output a disallowed entry for ``robots.txt``.
 ```
 ```
 http://10.81.159.65 [302 Found] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[./mbilling]
-http://10.81.159.65/mbilling [301 Moved Permanently] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[http://10.81.159.65/mbilling/], Title[301 Moved Permanently]
 ```
 
 ```bash
-❯ whatweb http://10.81.159.65/mbilling
+❯ whatweb http://10.81.159.65/mbilling/
 ```
 ```
-http://10.81.159.65/mbilling [301 Moved Permanently] Apache[2.4.62], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], RedirectLocation[http://10.81.159.65/mbilling/], Title[301 Moved Permanently]
 http://10.81.159.65/mbilling/ [200 OK] Apache[2.4.62], Country[RESERVED][ZZ], HTML5[applicationCache], HTTPServer[Debian Linux][Apache/2.4.62 (Debian)], IP[10.81.159.65], Script[text/javaScript,text/javascript], Title[MagnusBilling][Title element contains newline(s)!]
 ```
 

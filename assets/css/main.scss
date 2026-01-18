@@ -17,7 +17,13 @@
   color: #B0E5E8 !important;
 }
 
-/* Scrollbar for Chromium based browsers */
+/* Link focus outline, typical in Firefox-based browsers */
+
+a:focus {
+  outline: none;
+}
+
+/* Scrollbar for Chromium-based browsers */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -37,7 +43,7 @@
   background-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Scrollbar for Firefox based browsers */
+/* Scrollbar for Firefox-based browsers */
 * {
   scrollbar-width: auto;
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
