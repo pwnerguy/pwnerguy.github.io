@@ -1,13 +1,13 @@
 ---
 layout: single
-title: Cheat Sheet - Enumeration
+title: Enum Cheat Sheet
 date: 2026-01-07
 classes: wide
 header:
-  teaser: /assets/images/htb.png
+  teaser: /assets/images/cheatsheet.png
   teaser_home_page: true
 categories:
-  - cheatsheets
+  - Cheat Sheets
 tags:
   - cheatsheets
 ---
