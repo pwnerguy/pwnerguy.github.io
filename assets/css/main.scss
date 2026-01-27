@@ -65,14 +65,19 @@ body {
   margin-top: 90px; 
 }
 
+/* Table font sizes */
+.page__content table {
+  font-size: 17px;
+}
+
 .masthead {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: #fff;
-      z-index: 1000;
-      background-color: #050D1A;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  z-index: 1000;
+  background-color: #050D1A;
 }
 
 .sidebar {
