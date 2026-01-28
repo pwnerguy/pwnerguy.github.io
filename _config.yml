@@ -16,10 +16,10 @@ minimal_mistakes_skin    : "haxor" # "haxor", "air", "aqua", "contrast", "dark",
 
 # Site Settings
 locale                   : "en-GB"
-title                    : "Shell & Coffee"
+title                    : "pwnerguy's shell stuff - hacking, learning, repeating"
 title_separator          : "-"
-name                     : "Shell & Coffee by pwnerguy"
-description              : "Shell & Coffee is an ethical hacking blog focused on solving practical labs (CTFs) from the Hack The Box, TryHackMe, and VulnHub platforms."
+name                     : "pwnerguy's shell stuff"
+description              : "Hacking, learning, repeating,<br>because the shell never sleeps."
 url                      : "https://pwnerguy.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "pwnerguy/pwnerguy.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -107,7 +107,7 @@ analytics:
 author:
   name             : "pwnerguy"
   avatar           : "/assets/images/pwnerguy.png"
-  bio              : "Shell & Coffee is an ethical hacking<br>blog focused on solving practical<br>labs (CTFs) from the Hack The Box,<br>TryHackMe and VulnHub platforms."
+  bio              : "Hacking, learning, repeating,<br>because the shell never sleeps."
   location         :
   profile          : true
   sticky           : false

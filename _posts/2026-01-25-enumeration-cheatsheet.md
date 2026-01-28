@@ -15,7 +15,7 @@ tags:
 # Introduction
 -----
 
-Welcome to the **Shell & Coffee Enumeration Cheat Sheet**!
+Welcome to the blog's **Enumeration Cheat Sheet**!
 
 I will be actively updating it through commits as needed
 
@@ -52,6 +52,42 @@ I will be actively updating it through commits as needed
 | `ftp -p 10.10.10.10`                                                                                             | Connecting to FTP as Anonymous                                                |
 | `snmpwalk -v 2c -c public 10.10.10.10 1.3.6.1.2.1.1.5.0`                                                         | Scan SNMP on an IP                                                            |
 | `onesixtyone -c dict.txt 10.10.10.10`                                                                            | Brute force SNMP secret string                                                |
+
+<br>
+# OSINT
+------
+
+| **Name**                           | **URL**                                                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mails and credentials**          |                                                                                                                                              |
+| Hunter                             | [https://hunter.io](https://hunter.io)                                                                                                       |
+| phonebook                          | [https://phonebook.cz](https://phonebook.cz)                                                                                                 |
+| Verifymailaddress                  | [https://www.verifyemailaddress.org](https://www.verifyemailaddress.org)                                                                     |
+| email-checker                      | [https://email-checker.net](https://email-checker.net)                                                                                       |
+| haveibeenpwned                     | [https://haveibeenpwned.com/](https://haveibeenpwned.com/)                                                                                   |
+| haveibeenpwned (for phone numbers) | [https://www.passwordmanager.com/have-i-been-pwned/](https://www.passwordmanager.com/have-i-been-pwned/)                                     |
+| LeakPeek                           | [https://leakpeek.com](https://leakpeek.com)                                                                                                 |
+| Epieos                             | [https://epieos.com](https://epieos.com)                                                                                                     |
+| Shodan                             | [https://www.shodan.io](https://www.shodan.io)                                                                                               |
+| Social-Searcher                    | [https://www.social-searcher.com](https://www.social-searcher.com)                                                                           |
+| What's My Name                     | [https://whatsmyname.app](https://whatsmyname.app)                                                                                           |
+| Censys                             | [https://search.censys.io](https://search.censys.io)                                                                                         |
+| **Images**                         |                                                                                                                                              |
+| Pimeyes                            | [https://pimeyes.com](https://pimeyes.com)                                                                                                   |
+| Google Images                      | [https://images.google.com](https://images.google.com)                                                                                       |
+| **Domains**                        |                                                                                                                                              |
+| phonebook                          | [https://phonebook.cz](https://phonebook.cz)                                                                                                 |
+| ctfr.py                            | [https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py](https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py)                           |
+| Whois                              | [https://www.dondominio.com/es/whois](https://www.dondominio.com/es/whois)                                                                   |
+| dnsdumpster                        | [https://dnsdumpster.com](https://dnsdumpster.com)                                                                                           |
+| crt.sh                             | [http://crt.sh](http://crt.sh)                                                                                                               |
+| Gobuster                           | `gobuster dns -d test.local -w /usr/share/SecLists/Discovery/DNS/namelist.txt`                                                               |
+| **Dorking**                        |                                                                                                                                              |
+| Implemented Search Engine          | [https://pentest-tools.com/information-gathering/google-hacking](https://pentest-tools.com/information-gathering/google-hacking)             |
+| Dorking Manual                     | [https://www.exploit-db.com/google-hacking-database ](https://www.exploit-db.com/google-hacking-database)                                    |
+| **Web Technologies**               |                                                                                                                                              |
+| Wappalyzer addon for Firefox       | [https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer](https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer) |
+| BuiltWith                          | [https://builtwith.com](https://builtwith.com)                                                                                               |
 
 <br>
 # OS Version
@@ -110,46 +146,11 @@ I will be actively updating it through commits as needed
 # Default Web Roots
 --------
 
-| **Web Server** | **Route**                |
+| **Web Server** | **Root**                 |
 | -------------- | ------------------------ |
 | Apache         | `/var/www/html/`         |
-| Nginx          | `/usr/local/nginx/html/` |
+| nginx          | `/usr/local/nginx/html/` |
 | IIS            | `C:\inetpub\wwwroot\`    |
 | XAMPP          | `C:\xampp\htdocs\`       |
 
-<br>
-# OSINT
---------
 
-| **Name**                           | **URL**                                                                                                                                      |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Mails and credentials**          |                                                                                                                                              |
-| Hunter                             | [https://hunter.io](https://hunter.io)                                                                                                       |
-| phonebook                          | [https://phonebook.cz](https://phonebook.cz)                                                                                                 |
-| Verifymailaddress                  | [https://www.verifyemailaddress.org](https://www.verifyemailaddress.org)                                                                     |
-| email-checker                      | [https://email-checker.net](https://email-checker.net)                                                                                       |
-| haveibeenpwned                     | [https://haveibeenpwned.com/](https://haveibeenpwned.com/)                                                                                   |
-| haveibeenpwned (for phone numbers) | [https://www.passwordmanager.com/have-i-been-pwned/](https://www.passwordmanager.com/have-i-been-pwned/)                                     |
-| LeakPeek                           | [https://leakpeek.com](https://leakpeek.com)                                                                                                 |
-| Epieos                             | [https://epieos.com](https://epieos.com)                                                                                                     |
-| Shodan                             | [https://www.shodan.io](https://www.shodan.io)                                                                                               |
-| Social-Searcher                    | [https://www.social-searcher.com](https://www.social-searcher.com)                                                                           |
-| What's My Name                     | [https://whatsmyname.app](https://whatsmyname.app)                                                                                           |
-| Censys                             | [https://search.censys.io](https://search.censys.io)                                                                                         |
-| **Images**                         |                                                                                                                                              |
-| Pimeyes                            | [https://pimeyes.com](https://pimeyes.com)                                                                                                   |
-| Google Images                      | [https://images.google.com](https://images.google.com)                                                                                       |
-| **Domains**                        |                                                                                                                                              |
-| phonebook                          | [https://phonebook.cz](https://phonebook.cz)                                                                                                 |
-| ctfr.py                            | [https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py](https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py)                           |
-| Whois                              | [https://www.dondominio.com/es/whois](https://www.dondominio.com/es/whois)                                                                   |
-| dnsdumpster                        | [https://dnsdumpster.com](https://dnsdumpster.com)                                                                                           |
-| crt.sh                             | [http://crt.sh](http://crt.sh)                                                                                                               |
-| rpcenum                            | [https://github.com/s4vitar/rpcenum/blob/master/rpcenum](https://github.com/s4vitar/rpcenum/blob/master/rpcenum)                             |
-| Gobuster                           | `gobuster dns -d test.local -w /usr/share/SecLists/Discovery/DNS/namelist.txt`                                                               |
-| **Dorking**                        |                                                                                                                                              |
-| Implemented Search Engine          | [https://pentest-tools.com/information-gathering/google-hacking](https://pentest-tools.com/information-gathering/google-hacking)             |
-| Dorking Manual                     | [https://www.exploit-db.com/google-hacking-database ](https://www.exploit-db.com/google-hacking-database)                                    |
-| **Web Technologies**               |                                                                                                                                              |
-| Wappalyzer addon for Firefox       | [https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer](https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer) |
-| BuiltWith                          | [https://builtwith.com](https://builtwith.com)                                                                                               |
