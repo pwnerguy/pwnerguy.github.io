@@ -27,16 +27,12 @@ This writeup documents the penetration testing of the [**Publisher**](https://tr
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.10.133.33
-```
-```
 PING 10.10.133.33 (10.10.133.33) 56(84) bytes of data.
 64 bytes from 10.10.133.33: icmp_seq=1 ttl=63 time=54.4 ms
 
@@ -47,10 +43,8 @@ rtt min/avg/max/mdev = 54.388/54.388/54.388/0.000 m
 
 In this case, it seems to be a Linux machine. Let's perform a port scan with nmap.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.133.33 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-31 16:45 CET
 Initiating SYN Stealth Scan at 16:45
@@ -72,10 +66,8 @@ Nmap done: 1 IP address (1 host up) scanned in 16.39 seconds
            Raw packets sent: 81300 (3.577MB) | Rcvd: 69984 (2.799MB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p22,80 10.10.133.33 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-31 16:46 CET
 Nmap scan report for 10.10.133.33
 Host is up (0.055s latency).
@@ -95,18 +87,12 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 9.35 seconds
 ```
 
-nmap found some open ports. The intrussion is probably going to be, or at least start, from port 80.
-
-To figure out the Ubuntu's version codename we need to search in the internet the SSH version followed by '**launchpad**': [https://launchpad.net/ubuntu/+source/openssh/1:8.2p1-4ubuntu0.9](https://launchpad.net/ubuntu/+source/openssh/1:8.2p1-4ubuntu0.9)
-
-We are facing an **Ubuntu Focal**.
+nmap found some open ports. The intrussion is probably going to be, or at least start, from port 80. You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s [Enumeration Cheat Sheet](https://pwnerguy.github.io/enumeration-cheatsheet/), which includes a table mapping service versions to possible operating system versions. We are facing an **Ubuntu Focal**.
 
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
-```bash
+```
 ❯ whatweb http://10.10.133.33
-```
-```
 http://10.10.133.33 [200 OK] Apache[2.4.41], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.133.33], Title[Publisher's Pulse: SPIP Insights & Tips]
 ```
 
@@ -114,10 +100,8 @@ http://10.10.133.33 [200 OK] Apache[2.4.41], Country[RESERVED][ZZ], HTTPServer[U
 
 We have nothing interesting on either the website or the source code. Both [**Wappalyzer**](https://www.wappalyzer.com/) and nmap confirm the Apache version which is **2.4.41**.
 
-```bash
+```
 ❯ gobuster dir -u 10.10.133.33 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
-```
-```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -153,10 +137,8 @@ Finished
 
 Let's search an exploit with **searchsploit** for the 4.2.0 version of SPIP.
 
-```bash
+```
 ❯ searchsploit SPIP 4.2.0
-```
-```
 ------------------------------------------------------------------------------------------------
  Exploit Title                                                            |  Path
 ------------------------------------------------------------------------------------------------
@@ -252,8 +234,9 @@ Now, let's try to get a reverse shell and get access to the machine.
 # Post-Exploitation
 ----------
 
-```bash
-# tty upgrading
+TTY upgrading:
+
+```
 ❯ script /dev/null -c bash
 ❯ Ctrl+Z
 ❯ stty raw -echo; fg
@@ -277,25 +260,21 @@ In think's home directory you'll find the same flag we found before.
 
 **Linpeas** show us an interesting SUID file.
 
-```bash
+```
 think@ip-10-10-133-33:/etc/apparmor.d$ ls -l /usr/sbin/run_container
-```
-```
 -rwsr-sr-x 1 root root 16760 Nov 14  2023 /usr/sbin/run_container
 ```
 
 Using the command ``strings`` we can see that it executes a bash scrip: ``/opt/run_container.sh``.
 
-```bash
+```
 think@ip-10-10-133-33:/etc/apparmor.d$ ls -l /opt/run_container.sh
-```
-```
 -rwxrwxrwx 1 root root 1715 Jan 10  2024 /opt/run_container.sh
 ```
 
 We need to modify the file and add ``bash -p`` to get a shell as root, but notice that we are in an Ash Shell and we can't write anything.
 
->[ash (Kenneth Almquist's ash shell) **is a lightweight (92K) Bourne compatible shell**. Great for machines with low memory, but does not provide all the extras of shells like bash, tcsh, and zsh.](https://www.geeksforgeeks.org/linux-unix/difference-between-ash-and-bash/)
+>[ash (Kenneth Almquist's ash shell)](https://www.geeksforgeeks.org/linux-unix/difference-between-ash-and-bash/) **is a lightweight (92K) Bourne compatible shell**. Great for machines with low memory, but does not provide all the extras of shells like bash, tcsh, and zsh.
 
 I need to get a bash shell in order to bypass those restrictions. I have used a kernel library to spawn a bash shell:
 

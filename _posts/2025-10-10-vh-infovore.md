@@ -32,11 +32,7 @@ Firstly, we need to discover the IP of the **infovore** machine. We will use **a
 
 ![](/assets/images/vh-infovore/arp-scan.png)
 
-I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP.
-
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
@@ -44,17 +40,13 @@ In this case it appears to be a Linux machine. Now we will perform a port scan.
 
 ![](/assets/images/vh-infovore/nmap1.png)
 
-**extractPorts** reads the grepable export file allPorts, shows me the open ports and copy them in the clipboard. 
-
-Let's perform a deeper scan using basic recon nmap scripts to see more information about the port 80.
+**extractPorts** reads the grepable export file allPorts, shows me the open ports and copy them in the clipboard.  Let's perform a deeper scan using basic recon nmap scripts to see more information about the port 80.
 
 ![](/assets/images/vh-infovore/nmap2.png)
 
 After performing this second scan we can see that we are facing an Apache web server running on a Debian machine. We can also see a title **"Include me ..."**.
 
-Let's figure out the Debian version codename. We need to search in the internet the Apache version followed by '**launchpad**'.
-
-We are facing a **Debian Buster**.
+You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s [Enumeration Cheat Sheet](https://pwnerguy.github.io/enumeration-cheatsheet/), which includes a table mapping service versions to possible operating system versions. We are facing a **Debian Buster**.
 
 ![](/assets/images/vh-infovore/codename.png)
 

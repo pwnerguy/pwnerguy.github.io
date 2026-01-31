@@ -29,11 +29,7 @@ First, we need to discover the IP of the MyExpense machine.
 
 ![](/assets/images/vh-myexpense/arp-scan.png)
 
-Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar.
-
-After identifying the target's IP address, we need to enumerate as  much information as possible about the host.
-
-A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
@@ -51,7 +47,7 @@ Now we will perform a port scan on the machine. To work in an organized way we w
 
 ![](/assets/images/vh-myexpense/targeted2.png)
 
-We can see some ports open. The most interesting port is the 80 port. Once we have scanned all ports of the machine it's good to know the Debian codename behind the system, we need to Google the Apache version reported by nmap followed by '**launchpad**'.
+We can see some ports open. The most interesting port is the 80 port. You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s [Enumeration Cheat Sheet](https://pwnerguy.github.io/enumeration-cheatsheet/), which includes a table mapping service versions to possible operating system versions.
 
 ![](/assets/images/vh-myexpense/launchpad.png)
 
