@@ -104,16 +104,17 @@ Welcome to the blog's **Enumeration Cheat Sheet**! I will be actively updating i
 # Common services enum
 -----
 
-| **Common Services Enum**                                                   |                                                                               |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `smbclient -L -N //10.10.10.10`                                            | List SMB Shares                                                               |
-| `smbmap -H //10.10.10.10`                                                  | List SMB Shares and its permissions                                           |
-| `smbclient //10.10.10.10/share -N`                                         | Connect to a SMB share as 'guest' to see files                                |
-| `smbclient //10.10.10.10/share -U user password`                           | Connect to a SMB share with credentials to see files                          |
-| `netcat 10.10.10.10 8080`                                                  | Banner Grabbing                                                               |
-| `ftp -p 10.10.10.10`                                                       | Connecting to FTP as Anonymous                                                |
-| `snmpwalk -v 2c -c public 10.10.10.10 1.3.6.1.2.1.1.5.0`                   | Scan SNMP on an IP                                                            |
-| `onesixtyone -c dict.txt 10.10.10.10`                                      | Brute force SNMP secret string                                                |
+| **Common Services Enum**                                 |                                                      |
+| -------------------------------------------------------- | ---------------------------------------------------- |
+| `smbclient -L -N //10.10.10.10`                          | List SMB Shares                                      |
+| `smbmap -H //10.10.10.10`                                | List SMB Shares and its permissions                  |
+| `smbclient //10.10.10.10/share -N`                       | Connect to a SMB share as 'guest' to see files       |
+| `smbclient //10.10.10.10/share -U user password`         | Connect to a SMB share with credentials to see files |
+| `netcat 10.10.10.10 8080`                                | Banner Grabbing                                      |
+| `ftp -p 10.10.10.10`                                     | Connecting to FTP as Anonymous                       |
+| `snmpwalk -v 2c -c public 10.10.10.10 1.3.6.1.2.1.1.5.0` | Scan SNMP on an IP                                   |
+| `onesixtyone -c dict.txt 10.10.10.10`                    | Brute force SNMP secret string                       |
+
 <br>
 # OSINT
 ------
