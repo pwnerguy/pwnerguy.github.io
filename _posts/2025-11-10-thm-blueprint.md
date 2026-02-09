@@ -11,6 +11,7 @@ categories:
   - Easy
   - Windows
 tags:
+  - rce
   - oscommerce-2.3.4-rce
   - file-upload-abuse
 ---

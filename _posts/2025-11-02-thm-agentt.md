@@ -11,6 +11,7 @@ categories:
   - Easy
   - Linux
 tags:
+  - rce
   - user-agent-rce
   - rshell-escape
 ---
