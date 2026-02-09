@@ -24,6 +24,7 @@ a:focus {
 }
 
 /* Scrollbar for Chromium-based browsers */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -44,6 +45,7 @@ a:focus {
 }
 
 /* Scrollbar for Firefox-based browsers */
+
 * {
   scrollbar-width: auto;
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
