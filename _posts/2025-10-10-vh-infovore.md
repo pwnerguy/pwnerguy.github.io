@@ -32,7 +32,7 @@ Firstly, we need to discover the IP of the **infovore** machine. We will use **a
 
 ![](/assets/images/vh-infovore/arp-scan.png)
 
-I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+I use the **settarget** function to set the target IP in the Polybar, so that we can see in any moment DarkHole's IP. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. [**ttl-ripper.sh**](https://github.com/Akronox/WichSystem.py) can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 

@@ -79,7 +79,7 @@ Welcome to the blog's **Enumeration Cheat Sheet**! I will be actively updating i
 | `-oG filename`                                                                                                                                                                                                                    | "Grepeable" format                                                                                   |
 | `-oX filename`<br>`xsltproc target.xml -o target.html`                                                                                                                                                                            | XML format and XML conversion to HTML                                                                |
 
-| **Nmap alternatives**                                |                                                    |
+| **Possible Nmap alternatives**                       |                                                    |
 | ---------------------------------------------------- | -------------------------------------------------- |
 | `masscan -p21,22,80 -Pn 10.10.10.10/16 --rate=10000` | Valid alternative to nmap                          |
 | `arp-scan -I eth0 --localnet --ignoredups`           | ARP scan in the local network.                     |
@@ -174,4 +174,6 @@ Welcome to the blog's **Enumeration Cheat Sheet**! I will be actively updating i
 <br>
 ### OSINT Cheat Sheet: https://pwnerguy.github.io/osint-cheatsheet/
 
+
+### TTL Ripper utility: https://github.com/pwnerguy/ttl-ripper
 

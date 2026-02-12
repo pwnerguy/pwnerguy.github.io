@@ -29,7 +29,7 @@ First, we need to discover the IP of the MyExpense machine.
 
 ![](/assets/images/vh-myexpense/arp-scan.png)
 
-Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. The [**whichSystem**](https://github.com/Akronox/WichSystem.py) script can also be used for this purpose.
+Once we identify the victim machine it would be optimal to use **settarget** to set the target IP in the Polybar. After identifying the target's IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. [**ttl-ripper.sh**](https://github.com/Akronox/WichSystem.py) can also be used for this purpose.
 * TTL 64: Linux.
 * TTL 128: Windows.
 
