@@ -1,11 +1,3 @@
-_site
-.sass-cache
-.jekyll-metadata
-_drafts
-.DS_Store
-.bundle
-vendor
 .obsidian
-googlec3517029c72982e9.html
-Gemfile
-Gemfile.lock
+/writeups/node_modules
+/cheatsheets/node_modules
