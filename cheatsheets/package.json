@@ -1,8 +1,4 @@
 {
-  "type": "module"
-}
-
-{
   "name": "cheatsheets",
   "version": "1.0.0",
   "description": "",
@@ -13,7 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "gray-matter": "^4.0.3",
     "marked": "^17.0.2"

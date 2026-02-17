@@ -62,7 +62,7 @@ let indexHTML = `
                             ${i.logo ? `<img src="${i.logo}" class="cheatsheet-logo">` : ""}
                         </div>
                         <div class="cheatsheet-card-content">
-                            <h2>${i.title}<br>Cheat Sheet</h2>
+                            <h2>${i.title}</h2>
                         </div>
                         <div class="cheatsheet-card-footer">
                             <a href="/cheatsheets/view/${i.slug}.html" class="cheatsheet-link">Read cheat sheet →</a>

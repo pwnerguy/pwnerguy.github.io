@@ -88,7 +88,6 @@ Welcome to the blog's [Enumeration Cheat Sheet](https://pwnerguy.github.io/cheat
 | `openssl s_client -connect test.local:443`                                                                             | Inspect the site's SSL certificate                             |
 | `sslscan test.local`                                                                                                   | Scan to search vulns in a HTTPS site                           |
 
--------
 ## FTP
 
 | **Command**                                                    | **Description**                                           |
