@@ -100,8 +100,8 @@ a:hover {
 
 .icons svg {
     pointer-events: none;
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
 }
 
 /* pwnerguy & About this site */
@@ -176,7 +176,7 @@ main {
 
 .about-terminal {
     background-color: #1B1B1C;
-    width: 95%;
+    width: 100%;
     border: 1px solid #444;
     border-radius: 10px;
     padding: 30px;
@@ -282,10 +282,6 @@ footer p {
 }
 
 @media (width < 800px) {
- 
-    .about {
-        width: 90%;
-    }
 
     header {
         gap: 10px;
@@ -308,6 +304,14 @@ footer p {
         font-size: 16px;
         text-align: right;
         width: 100%;
+    }
+
+    .about {
+        width: 90%;
+    }
+
+    section.pwnerguy h4 {
+        width: 90%;
     }
 
     section.filters {
@@ -340,20 +344,38 @@ footer p {
 
 }
 
-@media (width < 400px) {
+@media (width < 412px) {
+
+    section.pwnerguy h4 {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .about {
+        padding: 20px;
+    }
+
+    .about-terminal {
+        padding: 20px;
+    }
 
     .writeup-card {
         width: 240px;
     }
 
-    .writeup-card-footer a {
-        text-align: center;
-        width: 50%;
+    a.writeup-link {
+        font-size: 12px;
+        width: 65%;
     }
 
     .writeup-content {
         width: 96%;
         padding: 15px;
+    }
+
+    a.cheatsheet-link {
+        font-size: 12px;
+        width: 85%;
     }
 
 }

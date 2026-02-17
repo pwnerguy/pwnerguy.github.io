@@ -141,9 +141,9 @@
     border: 1px solid #00ff88;
     text-shadow: none;
     border-radius: 5px;
-    padding: 8px 18px;
+    padding: 8px;
     font-size: 13px;
-    width: 65%;
+    width: 55%;
     text-align: center;
 }
 
@@ -196,6 +196,7 @@
 
 .writeup-content h2 {
     color: #00FF88;
+    line-height: 30px;
 }
 
 .writeup-tags {
