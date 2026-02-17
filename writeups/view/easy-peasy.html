@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Easy Peasy - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Easy Peasy</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-linux">Linux</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-steganography">Steganography</span> <span class="tag tag-cron">Cron</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/easypeasyctf"><strong>Easy Peasy</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform. In this case I&#39;ll play a CTF that is composed of mostly of enumeration, brute-forcing and decoding tasks and finally privesc with a vulnerable cronjob.</p>
+<hr>
+<h2>Information Gathering / Vulnerability Assessment / Exploitation</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.92.16
+PING 10.10.92.16 (10.10.92.16) 56(84) bytes of data.
+64 bytes from 10.10.92.16: icmp_seq=1 ttl=63 time=51.9 ms
+
+--- 10.10.92.16 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 51.885/51.885/51.885/0.000 ms
+</code></pre>
+<p>In this case, it seems to be a Linux machine. Let&#39;s perform some scans.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.92.16 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 14:28 CET
+Initiating SYN Stealth Scan at 14:28
+Scanning 10.10.92.16 [65535 ports]
+Discovered open port 80/tcp on 10.10.92.16
+Discovered open port 6498/tcp on 10.10.92.16
+Discovered open port 65524/tcp on 10.10.92.16
+Completed SYN Stealth Scan at 14:28, 16.53s elapsed (65535 total ports)
+Nmap scan report for 10.10.92.16
+Host is up, received user-set (0.079s latency).
+Scanned at 2025-11-02 14:28:24 CET for 16s
+Not shown: 61686 closed tcp ports (reset), 3846 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE REASON
+80/tcp    open  http    syn-ack ttl 63
+6498/tcp  open  unknown syn-ack ttl 63
+65524/tcp open  unknown syn-ack ttl 63
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 16.66 seconds
+           Raw packets sent: 82220 (3.618MB) | Rcvd: 64498 (2.580MB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p80,6498,65524 10.10.92.16 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-02 14:29 CET
+Nmap scan report for 10.10.92.16
+Host is up (0.051s latency).
+
+PORT      STATE SERVICE VERSION
+80/tcp    open  http    nginx 1.16.1
+|_http-server-header: nginx/1.16.1
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-title: Welcome to nginx!
+6498/tcp  open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 30:4a:2b:22:ac:d9:56:09:f2:da:12:20:57:f4:6c:d4 (RSA)
+|   256 bf:86:c9:c7:b7:ef:8c:8b:b9:94:ae:01:88:c0:85:4d (ECDSA)
+|_  256 a1:72:ef:6c:81:29:13:ef:5a:6c:24:03:4c:fe:3d:0b (ED25519)
+65524/tcp open  http    Apache httpd 2.4.43 ((Ubuntu))
+|_http-title: Apache2 Debian Default Page: It works
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: Apache/2.4.43 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 14.32 seconds
+</code></pre>
+<p>The nginx version is 1.16.1. The intrussion is probably going to be, or at least start, from port 80 or 65524. You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s <a href="https://pwnerguy.github.io/enumeration-cheatsheet/">Enumeration Cheat Sheet</a>, which includes a table mapping service versions to possible operating system versions. We are facing an <strong>Ubuntu Bionic</strong>. </p>
+<p>We can&#39;t do much with the SSH service since we don&#39;t have credentials yet. Now it&#39;s time to enumerate the web server running on the port 80:</p>
+<pre><code>❯ whatweb http://10.10.92.16
+http://10.10.92.16 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.16.1], IP[10.10.92.16], Title[Welcome to nginx!], nginx[1.16.1]
+</code></pre>
+<p><img src="/assets/images/easy-peasy/web.png" alt=""></p>
+<p><img src="/assets/images/easy-peasy/robots2.png" alt=""></p>
+<pre><code>❯ gobuster dir -u 10.10.92.16 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 txt,conf,bak,old
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.92.16
+[+] Method:                  GET
+[+] Threads:                 20
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/hidden               (Status: 301) [Size: 169] [--&gt; http://10.10.92.16/hidden/]
+Progress: 87662 / 87662 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre>
+<pre><code>❯ gobuster dir -u 10.10.92.16/hidden -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 txt,conf,bak,old
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.92.16/hidden
+[+] Method:                  GET
+[+] Threads:                 20
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/whatever             (Status: 301) [Size: 169] [--&gt; http://10.10.92.16/hidden/whatever/]
+Progress: 87662 / 87662 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre>
+<p><img src="/assets/images/easy-peasy/flag1.png" alt=""></p>
+<p>We have the <strong>first flag</strong> encoded in base64. To decode it: <code>echo &quot;flag&quot; | base64 -d; echo</code></p>
+<p>Let&#39;s also enumerate the web server running on the port 65524.</p>
+<pre><code>❯ whatweb http://10.10.92.16:65524
+http://10.10.92.16:65524 [200 OK] Apache[2.4.43], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.43 (Ubuntu)], IP[10.10.92.16], Title[Apache2 Debian Default Page: It works]
+</code></pre>
+<p><img src="/assets/images/easy-peasy/web2.png" alt=""></p>
+<p>Let&#39;s see the robots.txt file.</p>
+<p><img src="/assets/images/easy-peasy/robots.png" alt=""></p>
+<p>It looks like a hash. Let&#39;s crack it.</p>
+<p><img src="/assets/images/easy-peasy/flag2.png" alt=""></p>
+<p>We have the <strong>second flag</strong>.</p>
+<p>If you take a look in the code of this page you&#39;ll find the <strong>third flag</strong>:</p>
+<p><img src="/assets/images/easy-peasy/flag3.png" alt=""></p>
+<p>The flag it&#39;s a hash, so let&#39;s crack it.</p>
+<p><img src="/assets/images/easy-peasy/hash4.png" alt=""></p>
+<p>You&#39;ll also find a base62 string in the code:</p>
+<p><img src="/assets/images/easy-peasy/hash.png" alt=""></p>
+<p><img src="/assets/images/easy-peasy/hidden_dir.png" alt=""></p>
+<p>It seems that it&#39;s a directory.</p>
+<p><img src="/assets/images/easy-peasy/hash2.png" alt=""></p>
+<p>It&#39;s a gost hash. </p>
+<p><img src="/assets/images/easy-peasy/hash3.png" alt=""></p>
+<p>When dehashing it, I got a <strong>password</strong>. At this point I would think of <strong>steganography on the .jpg file</strong> of the page.</p>
+<p><img src="/assets/images/easy-peasy/steghide.png" alt=""></p>
+<p><img src="/assets/images/easy-peasy/password.png" alt=""></p>
+<p><strong>Now we have the user and password to login via SSH.</strong></p>
+<p><img src="/assets/images/easy-peasy/flag4.png" alt=""></p>
+<p>It says it&#39;s rotated, it&#39;s rot13, we have the <strong>user flag</strong>.</p>
+<hr>
+<h2>Post-Exploitation</h2>
+<pre><code>boring@kral4-PC:/etc$ cat /etc/crontab
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don&#39;t have to run the `crontab&#39;
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+17 *	* * *	root    cd / &amp;&amp; run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.daily )
+47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.weekly )
+52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.monthly )
+#
+* *    * * *   root    cd /var/www/ &amp;&amp; sudo bash .mysecretcronjob.sh
+boring@kral4-PC:/var/www$ ls -la
+total 16
+drwxr-xr-x  3 root   root   4096 Jun 15  2020 .
+drwxr-xr-x 14 root   root   4096 Jun 13  2020 ..
+drwxr-xr-x  4 root   root   4096 Jun 15  2020 html
+-rwxr-xr-x  1 boring boring   33 Jun 14  2020 .mysecretcronjob.sh
+</code></pre>
+<p>The vulnerable cronjob is running every minute as root and it&#39;s writeable by boring!</p>
+<p>I&#39;ll add in <code>.mysecretcronjob.sh</code> the following command to give SUID permission to /bin/bash: <code>chmod u+s /bin/bash</code></p>
+<pre><code>boring@kral4-PC:/var/www$ bash -p
+bash-4.4# whoami
+root
+bash-4.4# cd /root
+bash-4.4# ls -la
+total 40
+drwx------  5 root root 4096 Jun 15  2020 .
+drwxr-xr-x 23 root root 4096 Jun 15  2020 ..
+-rw-------  1 root root  883 Jun 15  2020 .bash_history
+-rw-r--r--  1 root root 3136 Jun 15  2020 .bashrc
+drwx------  2 root root 4096 Jun 13  2020 .cache
+drwx------  3 root root 4096 Jun 13  2020 .gnupg
+drwxr-xr-x  3 root root 4096 Jun 13  2020 .local
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+-rw-r--r--  1 root root   39 Jun 15  2020 .root.txt
+-rw-r--r--  1 root root   66 Jun 14  2020 .selected_editor
+bash-4.4# cat .root.txt
+***REDACTED_FLAG***
+</code></pre>
+<p>And finally, we get the <strong>root flag</strong>!</p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

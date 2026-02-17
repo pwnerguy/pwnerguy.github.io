@@ -1,0 +1,171 @@
+/* /cheatsheets CSS */
+
+
+.cheatsheets-page-title {
+    color: #00FF88;
+    font-size: 40px;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+    margin-top: 100px;   
+}
+
+.cheatsheets-list {
+    margin-top: 70px;
+    margin-bottom: 70px;
+    width: 80%;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cheatsheet-card {
+    background-color: #111;
+    border: 1px solid #00FF88;
+    border-radius: 10px;
+    margin: 15px;
+    width: 300px;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.cheatsheet-card:hover {
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.2);
+    transform: translateY(-2px);
+}
+
+.cheatsheet-card-image {
+    padding: 30px;
+    border-bottom: 1px solid #00FF88;
+
+    display: flex;
+    justify-content: center;
+}
+
+.cheatsheet-card-image img {
+    width: 55%;
+}
+
+.cheatsheet-card-content {
+    padding: 25px;
+    height: 180px;
+}
+
+.cheatsheet-card-content h2 {
+    color: #00FF88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+    margin-bottom: 20px;
+    font-size: 30px;
+    line-height: 35px;
+    text-align: center;
+}
+
+.cheatsheet-card-footer {
+    font-size: 12px;
+    padding: 25px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cheatsheet-link {
+    border: 1px solid #00ff88;
+    text-shadow: none;
+    border-radius: 5px;
+    padding: 8px 18px;
+    font-size: 14px;
+    width: 75%;
+    text-align: center;
+}
+
+.cheatsheet-link:hover {
+    color: white;
+    box-shadow: rgba(0, 255, 136, 0.5) 0px 0px 10px;
+    background-color:  rgba(0, 255, 136, 1);
+    transform: translateY(0px);
+}
+
+/* Cheat sheets content*/
+
+.cheatsheet-content {
+    background-color: #111;
+    margin-top: 40px;
+    padding: 20px;
+    width: 96%;
+    border: 1px solid #00FF88;
+    border-radius: 10px;
+    box-shadow: rgba(0, 255, 136, 0.2) 0px 0px 4px;
+    transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+    font-size: 17px;
+}
+
+.cheatsheet-content h1 {
+    color: #00FF88;
+    font-size: 40px;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.cheatsheet-content h2 {
+    color: #00FF88;
+    font-size: 30px;
+}
+
+.cheatsheet-content a {
+    font-size: 17px;
+}
+
+/* Tables */
+
+.cheatsheet-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    background: transparent;
+    font-size: 16px;
+}
+
+.cheatsheet-content thead th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 1000;
+    color: #00FF88;
+    border-bottom: 1px solid #2a2b36;
+    font-size: 20px;
+}
+
+.cheatsheet-content tbody tr {
+    border-bottom: 1px solid #1f2030;
+}
+
+.cheatsheet-content tbody tr:last-child {
+    border-bottom: none;
+}
+
+.cheatsheet-content td {
+    padding: 10px 8px;
+    vertical-align: top;
+    color: #c7c9df;
+    line-height: 1.45;
+}
+
+.cheatsheet-content tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.cheatsheet-content code {
+    border-radius: 5px;
+    background-color: #1A1B26;
+    color: #bec6eb;
+    padding: 3px 6px;
+    font-size: 14px;
+
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Filas de sección (titulitos) */
+.cheatsheet-content tbody tr td:first-child strong {
+    color: #00FF88;        
+    font-weight: 700;
+    font-size: 15px;
+}

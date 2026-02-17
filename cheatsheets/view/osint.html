@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <link rel="stylesheet" href="/assets/css/cheatsheets/style.css" />
+        <title>OSINT - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+    <section class="cheatsheet-content">
+        <p>Welcome to the blog&#39;s <a href="https://pwnerguy.github.io/cheatsheets/view/osint.html">OSINT Cheat Sheet</a>! I will be actively updating it through commits as needed.</p>
+<h2>OSINT</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Util</strong></th>
+<th><strong>URL</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Mails and credentials</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Hunter</td>
+<td><a href="https://hunter.io">https://hunter.io</a></td>
+</tr>
+<tr>
+<td>Phonebook</td>
+<td><a href="https://phonebook.cz">https://phonebook.cz</a></td>
+</tr>
+<tr>
+<td>VerifyEmailAddress</td>
+<td><a href="https://www.verifyemailaddress.org">https://www.verifyemailaddress.org</a></td>
+</tr>
+<tr>
+<td>Email Checker</td>
+<td><a href="https://email-checker.net">https://email-checker.net</a></td>
+</tr>
+<tr>
+<td>HIBP</td>
+<td><a href="https://haveibeenpwned.com/">https://haveibeenpwned.com/</a></td>
+</tr>
+<tr>
+<td>HIBP (phone numbers)</td>
+<td><a href="https://www.passwordmanager.com/have-i-been-pwned/">https://www.passwordmanager.com/have-i-been-pwned/</a></td>
+</tr>
+<tr>
+<td>leakpeek</td>
+<td><a href="https://leakpeek.com">https://leakpeek.com</a></td>
+</tr>
+<tr>
+<td>Epieos</td>
+<td><a href="https://epieos.com">https://epieos.com</a></td>
+</tr>
+<tr>
+<td>Shodan</td>
+<td><a href="https://www.shodan.io">https://www.shodan.io</a><br><code>for i in $(cat subdomainlist);do host $i </code>|<code>grep &quot;has address&quot;</code>|<code>grep inlanefreight.com</code>|<code> cut -d&quot; &quot; -f4 &gt;&gt; ip-addresses.txt;done</code><br><code>for i in $(cat ip-addresses.txt);do shodan host $i;done</code></td>
+</tr>
+<tr>
+<td>Social Searcher</td>
+<td><a href="https://www.social-searcher.com">https://www.social-searcher.com</a></td>
+</tr>
+<tr>
+<td>WhatsMyName</td>
+<td><a href="https://whatsmyname.app">https://whatsmyname.app</a></td>
+</tr>
+<tr>
+<td>Censys</td>
+<td><a href="https://search.censys.io">https://search.censys.io</a></td>
+</tr>
+<tr>
+<td><strong>Images</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Pimeyes</td>
+<td><a href="https://pimeyes.com">https://pimeyes.com</a></td>
+</tr>
+<tr>
+<td>Google Images</td>
+<td><a href="https://images.google.com">https://images.google.com</a></td>
+</tr>
+<tr>
+<td><strong>Domains</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Phonebook</td>
+<td><a href="https://phonebook.cz">https://phonebook.cz</a></td>
+</tr>
+<tr>
+<td>WhoIs</td>
+<td><a href="https://www.dondominio.com/es/whois">https://www.dondominio.com/es/whois</a></td>
+</tr>
+<tr>
+<td>DNSDumpster</td>
+<td><a href="https://dnsdumpster.com">https://dnsdumpster.com</a></td>
+</tr>
+<tr>
+<td>ctfr.py</td>
+<td><a href="https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py">https://github.com/UnaPibaGeek/ctfr/blob/master/ctfr.py</a></td>
+</tr>
+<tr>
+<td>crt.sh</td>
+<td><a href="https://crt.sh">https://crt.sh</a><br><code>curl &#39;https://crt.sh/?q=inlanefreight.com&amp;output=json&#39; </code>|<code>jq .</code>|<code>grep name</code>|<code>cut -d&quot;:&quot; -f2</code>|<code>grep -v &quot;CN=&quot;</code>|<code>cut -d&#39;&quot;&#39; -f2</code>|<code>awk &#39;{gsub(/\\n/,&quot;\n&quot;);}1;&#39;</code>|<code> sort -u</code><br><code>for i in $(cat subdomainlist);do host $i </code>|<code>grep &quot;has address&quot;</code>|<code>grep inlanefreight.com</code>|<code> cut -d&quot; &quot; -f1,4;done</code></td>
+</tr>
+<tr>
+<td>Dig</td>
+<td><code>dig any inlanefreight.com</code></td>
+</tr>
+<tr>
+<td><strong>Dorking</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Implemented Search Engine</td>
+<td><a href="https://pentest-tools.com/information-gathering/google-hacking">https://pentest-tools.com/information-gathering/google-hacking</a></td>
+</tr>
+<tr>
+<td>Dorking Manual</td>
+<td><a href="https://www.exploit-db.com/google-hacking-database">https://www.exploit-db.com/google-hacking-database </a></td>
+</tr>
+<tr>
+<td>GrayHatWarfare</td>
+<td><a href="https://buckets.grayhatwarfare.com/">https://buckets.grayhatwarfare.com/</a></td>
+</tr>
+<tr>
+<td><strong>Web Technologies</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Wappalyzer addon for Firefox</td>
+<td><a href="https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer">https://addons.mozilla.org/en-US/firefox/addon/wappalyzer/Wappalyzer</a></td>
+</tr>
+<tr>
+<td>BuiltWith</td>
+<td><a href="https://builtwith.com">https://builtwith.com</a></td>
+</tr>
+</tbody></table>
+<h2>OS Version</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Ubuntu</strong></th>
+<th><strong>OpenSSH</strong></th>
+<th><strong>Apache</strong></th>
+<th><strong>nginx</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>14.04 - Trusty [LTS]</td>
+<td>6.6p1</td>
+<td>2.4.7</td>
+<td>1.4.6</td>
+</tr>
+<tr>
+<td>14.10 - Utopic</td>
+<td>6.6p1</td>
+<td>2.4.10</td>
+<td>1.6.2</td>
+</tr>
+<tr>
+<td>15.04 - Vivid</td>
+<td>6.7p1</td>
+<td>2.4.12</td>
+<td>1.6.2</td>
+</tr>
+<tr>
+<td>15.10 - Wily</td>
+<td>6.9p1</td>
+<td>2.4.12</td>
+<td>1.6.2</td>
+</tr>
+<tr>
+<td>16.04 - Xenial [LTS]</td>
+<td>7.2p1</td>
+<td>2.4.18</td>
+<td>1.10.0</td>
+</tr>
+<tr>
+<td>16.10 - Yakketty</td>
+<td>7.2p1</td>
+<td>2.4.18</td>
+<td>1.10.0</td>
+</tr>
+<tr>
+<td>17.04 - Zesty</td>
+<td>7.4p1</td>
+<td>2.4.25</td>
+<td>1.12.0</td>
+</tr>
+<tr>
+<td>17.10 - Artful</td>
+<td>7.6p1</td>
+<td>2.4.27</td>
+<td>1.13.3</td>
+</tr>
+<tr>
+<td>18.04 - Bionic [LTS]</td>
+<td>7.6p1</td>
+<td>2.4.29</td>
+<td>1.14.0</td>
+</tr>
+<tr>
+<td>18.10 - Cosmic</td>
+<td>7.7p1</td>
+<td>2.4.34</td>
+<td>1.16.0</td>
+</tr>
+<tr>
+<td>19.04 - Disco</td>
+<td>7.9p1</td>
+<td>2.4.35</td>
+<td>1.16.0</td>
+</tr>
+<tr>
+<td>19.10 - Eoan</td>
+<td>7.9p1</td>
+<td>2.4.41</td>
+<td>1.17.3</td>
+</tr>
+<tr>
+<td>20.04 - Focal [LTS]</td>
+<td>8.2p1</td>
+<td>2.4.41</td>
+<td>1.18.0</td>
+</tr>
+<tr>
+<td>20.10 - Groovy</td>
+<td>8.2p1</td>
+<td>2.4.46</td>
+<td>1.18.0</td>
+</tr>
+<tr>
+<td>21.04 - Hirsute</td>
+<td>8.4p1</td>
+<td>2.4.48</td>
+<td>1.20.1</td>
+</tr>
+<tr>
+<td>21.10 - Impish</td>
+<td>8.4p1</td>
+<td>2.4.51</td>
+<td>1.20.1</td>
+</tr>
+<tr>
+<td>22.04 - Jimmy [LTS]</td>
+<td>8.9p1</td>
+<td>2.4.52</td>
+<td>1.18.0</td>
+</tr>
+<tr>
+<td>22.10 - Kinetic</td>
+<td>8.9p1</td>
+<td>2.4.52</td>
+<td>1.22.0</td>
+</tr>
+<tr>
+<td>23.04 - Junar</td>
+<td>9.0p1</td>
+<td>2.4.54</td>
+<td>1.24.0</td>
+</tr>
+<tr>
+<td>23.10 - Mantic</td>
+<td>9.3p1</td>
+<td>2.4.57</td>
+<td>1.24.0</td>
+</tr>
+<tr>
+<td>24.04 - Noble [LTS]</td>
+<td>9.6p1</td>
+<td>2.4.58</td>
+<td>1.24.0</td>
+</tr>
+<tr>
+<td>24.10 - Oracular</td>
+<td>9.7p1</td>
+<td>2.4.62</td>
+<td>1.26.0</td>
+</tr>
+<tr>
+<td>25.04 - Plucky</td>
+<td>9.9p1</td>
+<td>2.4.63</td>
+<td>1.26.3</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th><strong>Debian</strong></th>
+<th><strong>OpenSSH</strong></th>
+<th><strong>nginx</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8 - Jessie</td>
+<td>6.7p1</td>
+<td>1.6.2</td>
+</tr>
+<tr>
+<td>9 - Stretch</td>
+<td>7.4p1</td>
+<td>1.10.3</td>
+</tr>
+<tr>
+<td>10 - Buster</td>
+<td>7.9p1</td>
+<td>1.42.2</td>
+</tr>
+<tr>
+<td>11 - Bullseye</td>
+<td>8.4p1</td>
+<td>1.8.0</td>
+</tr>
+<tr>
+<td>12 - Bookworm</td>
+<td>9.2p1</td>
+<td>1.22.1</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th><strong>Red Hat / CentOS</strong></th>
+<th><strong>OpenSSH</strong></th>
+<th><strong>Apache</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>5.3p1</td>
+<td>2.2.3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>6.6p1</td>
+<td>2.2.15</td>
+</tr>
+<tr>
+<td>7</td>
+<td>7.4p1</td>
+<td>2.4.6</td>
+</tr>
+<tr>
+<td>8</td>
+<td>8.0p1</td>
+<td>2.4.37</td>
+</tr>
+<tr>
+<td>9</td>
+<td>9.1p1</td>
+<td>2.4.53</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th><strong>Windows</strong></th>
+<th><strong>IIS</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10 / Server 2016 and later</td>
+<td>10.0</td>
+</tr>
+<tr>
+<td>8.1 / Server 2012 R2</td>
+<td>8.5</td>
+</tr>
+<tr>
+<td>7 / Server 2008 R2</td>
+<td>7.5</td>
+</tr>
+<tr>
+<td>XP (x64) / Server 2003</td>
+<td>6.0</td>
+</tr>
+</tbody></table>
+<h2>Default Web Roots</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Web Server</strong></th>
+<th><strong>Root</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Apache</td>
+<td><code>/var/www/html/</code></td>
+</tr>
+<tr>
+<td>nginx</td>
+<td><code>/usr/local/nginx/html/</code></td>
+</tr>
+<tr>
+<td>IIS</td>
+<td><code>C:\inetpub\wwwroot\</code></td>
+</tr>
+<tr>
+<td>XAMPP</td>
+<td><code>C:\xampp\htdocs\</code><br><code>/opt/lampp/htdocs</code></td>
+</tr>
+</tbody></table>
+
+    </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="" style="width: 17px; height: 17px;";><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="" style="width: 17px; height: 17px;"><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg="" style="width: 17px; height: 17px;"><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="" style="width: 17px; height: 17px;";><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="" style="width: 17px; height: 17px;"><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+    </body>
+</html>

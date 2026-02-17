@@ -1,0 +1,21 @@
+{
+  "type": "module"
+}
+
+{
+  "name": "cheatsheets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "generate.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "marked": "^17.0.2"
+  }
+}
